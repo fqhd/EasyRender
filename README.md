@@ -49,5 +49,5 @@ const ourObject = ERCreateObject(ourModel, texture);
 const objects = [ourObject];
 
 // Start the render loop
-ERStartRenderLoop();
+ERBeginRenderLoop(objects);
 ```

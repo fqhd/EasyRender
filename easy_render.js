@@ -1,0 +1,5 @@
+let gl;
+
+function ERInit(){
+
+}
