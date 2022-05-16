@@ -35,8 +35,15 @@ const textureCoords = [
 	1, 0
 ];
 
+// Define the textureData of your model(This will also generally be loaded in from a file)
+const textureData = [
+	0, 0, 255, 255 // This will make 1 opaque blue pixel
+];
+
 // Create a render object(In this case a triangle)
-const ourObject = await ERCreate(positions, normals, textureCoords, './texture.png');
+const ourModel = ERCreateModel(positions, normals, textureCoords);
+const texture = ERCreateTexture(textureData);
+const ourObject = ERCreateObject(ourModel, texture);
 
 // Make a list of the objects you would like to draw
 const objects = [ourObject];
