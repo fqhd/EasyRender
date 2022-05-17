@@ -7,6 +7,32 @@ function ERInit() {
 	createAllShaders();
 }
 
+function ERCreateModel(positions, normals, textureCoords){
+	const posBuff = gl.createBuffer();
+	const normBuff = gl.createBuffer();
+	const uvBuff = gl.createBuffer();
+
+	gl.bindBuffer(gl.ARRAY_BUFFER, posBuff);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+
+	gl.bindBuffer(gl.ARRAY_BUFFER, normBuff);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
+
+	gl.bindBuffer(gl.ARRAY_BUFFER, uvBuff);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoords), gl.STATIC_DRAW);
+
+	numPositions = positions.length / 3;
+
+	return {
+		buffers: {
+			posBuff,
+			normBuff,
+			uvBuff
+		},
+		numPositions
+	};
+}
+
 function initWebGL() {
 	const canvas = document.getElementById("ERCanvas");
 	gl = canvas.getContext("webgl");
@@ -16,10 +42,10 @@ function initGLState() {
 	gl.clearColor(0, 0, 0, 0);
 }
 
-function createShaderProgram(vs_source, fs_source) {
+function createShaderProgram(vSource, fSource) {
 	const program = gl.createProgram();
-	const vs = createShader(gl, gl.VERTEX_SHADER, vs_source);
-	const fs = createShader(gl, gl.FRAGMENT_SHADER, fs_source);
+	const vs = createShader(gl, gl.VERTEX_SHADER, vSource);
+	const fs = createShader(gl, gl.FRAGMENT_SHADER, fSource);
 	gl.attachShader(program, vs);
 	gl.attachShader(program, fs);
 	gl.linkProgram(program);
