@@ -17,6 +17,7 @@ function main(){
 	];
 
 	const m = ERCreateModel(positions, normals, uvs);
-	console.log(m);
+	ERInitScene([m]);
+	ERBeginRenderLoop();
 }
 main();

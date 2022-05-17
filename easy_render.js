@@ -1,5 +1,6 @@
 let gl;
 let modelShader;
+let objects;
 
 function ERInit() {
 	initWebGL();
@@ -7,7 +8,7 @@ function ERInit() {
 	createAllShaders();
 }
 
-function ERCreateModel(positions, normals, textureCoords){
+function ERCreateModel(positions, normals, textureCoords) {
 	const posBuff = gl.createBuffer();
 	const normBuff = gl.createBuffer();
 	const uvBuff = gl.createBuffer();
@@ -19,7 +20,11 @@ function ERCreateModel(positions, normals, textureCoords){
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
 
 	gl.bindBuffer(gl.ARRAY_BUFFER, uvBuff);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoords), gl.STATIC_DRAW);
+	gl.bufferData(
+		gl.ARRAY_BUFFER,
+		new Float32Array(textureCoords),
+		gl.STATIC_DRAW
+	);
 
 	numPositions = positions.length / 3;
 
@@ -27,10 +32,41 @@ function ERCreateModel(positions, normals, textureCoords){
 		buffers: {
 			posBuff,
 			normBuff,
-			uvBuff
+			uvBuff,
 		},
-		numPositions
+		numPositions,
 	};
+}
+
+function ERInitScene(_objects) {
+	objects = _objects;
+}
+
+function ERBeginRenderLoop() {
+	drawScene();
+	requestAnimationFrame(ERBeginRenderLoop);
+}
+
+function drawScene() {
+	gl.clear(gl.COLOR_BUFFER_BIT);
+	gl.useProgram(modelShader.program);
+	for(const object of objects){
+		drawObject(object);
+	}
+}
+
+function drawObject(object) {
+	gl.bindBuffer(gl.ARRAY_BUFFER, object.buffers.posBuff);
+	gl.vertexAttribPointer(
+		modelShader.attribLocations.vertexPosition,
+		3,
+		gl.FLOAT,
+		false,
+		0,
+		0
+	);
+	gl.enableVertexAttribArray(modelShader.attribLocations.vertexPosition);
+	gl.drawArrays(gl.TRIANGLES, 0, object.numPositions);
 }
 
 function initWebGL() {
@@ -39,7 +75,7 @@ function initWebGL() {
 }
 
 function initGLState() {
-	gl.clearColor(0, 0, 0, 0);
+	gl.clearColor(0, 0, 0, 1);
 }
 
 function createShaderProgram(vSource, fSource) {
@@ -89,5 +125,12 @@ function createModelShader() {
 	}
 	`;
 	const program = createShaderProgram(vSource, fSource);
-	return program;
+	return {
+		program,
+		attribLocations: {
+			aPosition: gl.getAttribLocation(program, 'aPosition'),
+			aNormal: gl.getAttribLocation(program, 'aNormal'),
+			aUV: gl.getAttribLocation(program, 'aUV')
+		}
+	};
 }
