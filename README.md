@@ -48,6 +48,9 @@ const ourObject = ERCreateObject(ourModel, texture);
 // Make a list of the objects you would like to draw
 const objects = [ourObject];
 
+// Tell EasyRender about the objects you would like to render
+ERInitScene(objects);
+
 // Start the render loop
-ERBeginRenderLoop(objects);
+ERBeginRenderLoop();
 ```
