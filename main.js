@@ -16,8 +16,9 @@ function main(){
 		1, 1
 	];
 
-	const m = ERCreateModel(positions, normals, uvs);
-	ERInitScene([m]);
+	const model = ERCreateModel(positions, normals, uvs);
+	const object = ERCreateObject(model, null);
+	ERInitScene([object]);
 	ERBeginRenderLoop();
 }
 main();

@@ -2,10 +2,26 @@ let gl;
 let modelShader;
 let objects;
 
+const { mat4, vec3 } = glMatrix;
+
 function ERInit() {
 	initWebGL();
 	initGLState();
 	createAllShaders();
+}
+
+function ERCreateObject(model, texture) {
+	return {
+		model,
+		texture,
+		transform: {
+			position: vec3.fromValues(0, 0, 0),
+			rotation: vec3.fromValues(0, 0, 0),
+			scale: vec3.fromValues(1, 1, 1),
+			matrix: mat4.create(),
+			needsMatrixUpdate: false,
+		},
+	};
 }
 
 function ERCreateModel(positions, normals, textureCoords) {
@@ -48,25 +64,48 @@ function ERBeginRenderLoop() {
 }
 
 function drawScene() {
-	gl.clear(gl.COLOR_BUFFER_BIT);
 	gl.useProgram(modelShader.program);
-	for(const object of objects){
+	gl.clear(gl.COLOR_BUFFER_BIT);
+	for (const object of objects) {
 		drawObject(object);
 	}
 }
 
 function drawObject(object) {
-	gl.bindBuffer(gl.ARRAY_BUFFER, object.buffers.posBuff);
+	gl.bindBuffer(gl.ARRAY_BUFFER, object.model.buffers.posBuff);
 	gl.vertexAttribPointer(
-		modelShader.attribLocations.vertexPosition,
+		modelShader.attribLocations.aPosition,
 		3,
 		gl.FLOAT,
 		false,
 		0,
 		0
 	);
-	gl.enableVertexAttribArray(modelShader.attribLocations.vertexPosition);
-	gl.drawArrays(gl.TRIANGLES, 0, object.numPositions);
+	gl.enableVertexAttribArray(modelShader.attribLocations.aPosition);
+
+	gl.bindBuffer(gl.ARRAY_BUFFER, object.model.buffers.normBuff);
+	gl.vertexAttribPointer(
+		modelShader.attribLocations.aNormal,
+		3,
+		gl.FLOAT,
+		false,
+		0,
+		0
+	);
+	gl.enableVertexAttribArray(modelShader.attribLocations.aNormal);
+
+	gl.bindBuffer(gl.ARRAY_BUFFER, object.model.buffers.uvBuff);
+	gl.vertexAttribPointer(
+		modelShader.attribLocations.aUV,
+		2,
+		gl.FLOAT,
+		false,
+		0,
+		0
+	);
+	gl.enableVertexAttribArray(modelShader.attribLocations.aUV);
+
+	gl.drawArrays(gl.TRIANGLES, 0, object.model.numPositions);
 }
 
 function initWebGL() {
@@ -115,22 +154,30 @@ function createModelShader() {
 	attribute vec3 aPosition;
 	attribute vec3 aNormal;
 	attribute vec2 aUV;
+
+	varying vec3 vNormal;
+	varying vec2 vUV;
 	
 	void main(){
-		gl_Position = vec4(aPosition, 1.0);
+		vNormal = aNormal;
+		vUV = aUV;
+		gl_Position = vec4(aPosition + aNormal*0.01, 1.0);
 	}`;
 	const fSource = `
+	varying mediump vec3 vNormal;
+	varying mediump vec2 vUV;
+
 	void main(){
-		gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+		gl_FragColor = vec4(vUV, 0.0, 1.0);
 	}
 	`;
 	const program = createShaderProgram(vSource, fSource);
 	return {
 		program,
 		attribLocations: {
-			aPosition: gl.getAttribLocation(program, 'aPosition'),
-			aNormal: gl.getAttribLocation(program, 'aNormal'),
-			aUV: gl.getAttribLocation(program, 'aUV')
-		}
+			aPosition: gl.getAttribLocation(program, "aPosition"),
+			aNormal: gl.getAttribLocation(program, "aNormal"),
+			aUV: gl.getAttribLocation(program, "aUV"),
+		},
 	};
 }
