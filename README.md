@@ -54,3 +54,12 @@ ERInitScene(objects);
 // Start the render loop
 ERBeginRenderLoop();
 ```
+
+### Documentation
+`ERCamGetPos()` returns camera position
+
+`ERCamSetPos(x, y, z)` sets camera position
+
+`ERCamLookAt()` updates the camera's view direction
+
+`ERCamSetFOV(fov)` updates the camera's field of view(in degrees)
