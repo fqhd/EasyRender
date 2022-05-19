@@ -79,11 +79,23 @@ function ERBeginRenderLoop() {
 
 function drawScene() {
 	gl.useProgram(modelShader.program);
+	updateCamera();
 	loadView();
 	loadProjection();
 	gl.clear(gl.COLOR_BUFFER_BIT);
 	for (const object of objects) {
 		drawObject(object);
+	}
+}
+
+function updateCamera(){
+	if(camera.needsProjectionUpdate){
+		updateProjection();
+		camera.needsProjectionUpdate = false;
+	}
+	if(camera.needsViewUpdate){
+		updateView();
+		camera.needsViewUpdate = false;
 	}
 }
 
@@ -147,6 +159,25 @@ function createShaderProgram(vSource, fSource) {
 	return program;
 }
 
+function ERCamGetPos() {
+	return camera.position;
+}
+
+function ERCamSetPos(x, y, z) {
+	vec3.set(camera.position, x, y, z);
+	camera.needsViewUpdate = true;
+}
+
+function ERCamLookAt(x, y, z) {
+	vec3.set(camera.forward, x, y, z);
+	camera.needsViewUpdate = true;
+}
+
+function ERCamSetFOV(fov) {
+	camera.fov = fov;
+	camera.needsProjectionUpdate = true;
+}
+
 function createShader(gl, type, source) {
 	const shader = gl.createShader(type);
 	gl.shaderSource(shader, source);
@@ -169,25 +200,37 @@ function toRadians(r) {
 	return (r * Math.PI) / 180;
 }
 
+function updateView() {
+	mat4.lookAt(
+		camera.view,
+		camera.position,
+		vec3.add(vec3.create(), camera.position, camera.forward),
+		vec3.fromValues(0, 1, 0)
+	);
+}
+
+function updateProjection() {
+	mat4.perspective(
+		camera.projection,
+		toRadians(camera.fov),
+		gl.canvas.clientWidth / gl.canvas.clientHeight,
+		0.1,
+		1000.0
+	);
+}
+
 function initCamera() {
 	const position = vec3.fromValues(0, 0, -5);
 	const forward = vec3.fromValues(0, 0, 1);
+	const fov = 70;
 	camera = {
 		position,
 		forward,
-		projection: mat4.perspective(
-			mat4.create(), // TODO: replace mat4.create() with null
-			toRadians(70),
-			gl.canvas.clientWidth / gl.canvas.clientHeight,
-			0.1,
-			1000.0
-		),
-		view: mat4.lookAt(
-			mat4.create(),
-			position,
-			vec3.add(vec3.create(), position, forward),
-			vec3.fromValues(0, 1, 0)
-		), // TODO: replace mat4.create() and vec3.create() with null
+		fov,
+		needsViewUpdate: true,
+		needsProjectionUpdate: true,
+		projection: mat4.create(),
+		view: mat4.create(),
 	};
 }
 
