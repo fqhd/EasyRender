@@ -60,6 +60,6 @@ ERBeginRenderLoop();
 
 `ERCamSetPos(x, y, z)` sets camera position
 
-`ERCamLookAt()` updates the camera's view direction
+`ERCamLookAt(x, y, z)` updates the camera's view direction
 
 `ERCamSetFOV(fov)` updates the camera's field of view(in degrees)
