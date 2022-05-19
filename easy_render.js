@@ -1,12 +1,14 @@
 let gl;
 let modelShader;
 let objects;
+let camera;
 
 const { mat4, vec3 } = glMatrix;
 
 function ERInit() {
 	initWebGL();
 	initGLState();
+	initCamera();
 	createAllShaders();
 }
 
@@ -147,6 +149,32 @@ function createShader(gl, type, source) {
 
 function createAllShaders() {
 	modelShader = createModelShader();
+}
+
+function toRadians(r) {
+	return (r * Math.PI) / 180;
+}
+
+function initCamera() {
+	const position = vec3.fromValues(0, 0, 0);
+	const forward = vec3.fromValues(0, 0, 1);
+	camera = {
+		position,
+		forward,
+		projection: mat4.perspective(
+			mat4.create(), // TODO: replace mat4.create() with null
+			toRadians(70),
+			gl.canvas.clientWidth / gl.canvas.clientHeight,
+			0.1,
+			1000.0
+		),
+		view: mat4.lookAt(
+			mat4.create(),
+			position,
+			vec3.add(vec3.create(), position, forward),
+			vec3.fromValues(0, 1, 0)
+		), // TODO: replace mat4.create() and vec3.create() with null
+	};
 }
 
 function createModelShader() {
