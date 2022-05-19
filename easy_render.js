@@ -242,23 +242,34 @@ function createModelShader() {
 
 	varying vec3 vNormal;
 	varying vec2 vUV;
+	varying vec3 lightDir;
 
 	uniform mat4 projection;
 	uniform mat4 view;
+
+	const vec3 lightPos = vec3(10.0, 10.0, 10.0);
 	
 	void main(){
 		vNormal = aNormal;
 		vUV = aUV;
+		lightDir = aPosition - lightPos;
 		gl_Position = projection * view * vec4(aPosition, 1.0);
 	}`;
 	const fSource = `
 	varying mediump vec3 vNormal;
 	varying mediump vec2 vUV;
+	varying mediump vec3 lightDir;
 
 	void main(){
-		gl_FragColor = vec4(vUV, 0.0, 1.0);
+		mediump vec3 unitLightDir = normalize(lightDir);
+		mediump float brightness = dot(unitLightDir, vNormal);
+		brightness = max(brightness, 0.2);
+		mediump vec3 color = vec3(0.0, 1.0, 0.0);
+		
+		gl_FragColor = vec4(color * brightness, 1.0);
 	}
 	`;
+
 	const program = createShaderProgram(vSource, fSource);
 	return {
 		program,
