@@ -26,6 +26,18 @@ function ERCreateObject(model, texture) {
 	};
 }
 
+function loadView() {
+	gl.uniformMatrix4fv(modelShader.uniformLocations.view, false, camera.view);
+}
+
+function loadProjection() {
+	gl.uniformMatrix4fv(
+		modelShader.uniformLocations.projection,
+		false,
+		camera.projection
+	);
+}
+
 function ERCreateModel(positions, normals, textureCoords) {
 	const posBuff = gl.createBuffer();
 	const normBuff = gl.createBuffer();
@@ -67,6 +79,8 @@ function ERBeginRenderLoop() {
 
 function drawScene() {
 	gl.useProgram(modelShader.program);
+	loadView();
+	loadProjection();
 	gl.clear(gl.COLOR_BUFFER_BIT);
 	for (const object of objects) {
 		drawObject(object);
@@ -156,7 +170,7 @@ function toRadians(r) {
 }
 
 function initCamera() {
-	const position = vec3.fromValues(0, 0, 0);
+	const position = vec3.fromValues(0, 0, -5);
 	const forward = vec3.fromValues(0, 0, 1);
 	camera = {
 		position,
@@ -185,11 +199,14 @@ function createModelShader() {
 
 	varying vec3 vNormal;
 	varying vec2 vUV;
+
+	uniform mat4 projection;
+	uniform mat4 view;
 	
 	void main(){
 		vNormal = aNormal;
 		vUV = aUV;
-		gl_Position = vec4(aPosition + aNormal*0.01, 1.0);
+		gl_Position = projection * view * vec4(aPosition, 1.0);
 	}`;
 	const fSource = `
 	varying mediump vec3 vNormal;
@@ -206,6 +223,10 @@ function createModelShader() {
 			aPosition: gl.getAttribLocation(program, "aPosition"),
 			aNormal: gl.getAttribLocation(program, "aNormal"),
 			aUV: gl.getAttribLocation(program, "aUV"),
+		},
+		uniformLocations: {
+			projection: gl.getUniformLocation(program, "projection"),
+			view: gl.getUniformLocation(program, "view"),
 		},
 	};
 }
