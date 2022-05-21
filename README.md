@@ -18,32 +18,10 @@ Here is a small example to get you started using the library.
 // Initialize the library
 ERInit();
 
-// Define the positions, normals, and textureCoords of your model (These will generally be loaded from a file)
-const positions = [
-	0, 0, 0,
-	0.5, 1, 0,
-	1, 0, 0,
-];
-const normals = [
-	0, 0, -1,
-	0, 0, -1,
-	0, 0, -1,
-];
-const textureCoords = [
-	0, 0,
-	0.5, 1,
-	1, 0
-];
-
-// Define the textureData of your model(This will also generally be loaded in from a file)
-const textureData = [
-	0, 0, 255, 255 // This will make 1 opaque blue pixel
-];
-
-// Create a render object(In this case a triangle)
-const ourModel = ERCreateModel(positions, normals, textureCoords);
-const texture = ERCreateTexture(textureData);
-const ourObject = ERCreateObject(ourModel, texture);
+// Load the model and texture and create a render object
+const model = ERLoadModel("./model.obj");
+const texture = ERLoadTexture("./texture.obj");
+const ourObject = ERCreateObject(model, texture);
 
 // Make a list of the objects you would like to draw
 const objects = [ourObject];
@@ -63,3 +41,7 @@ ERBeginRenderLoop();
 `ERCamLookAt(x, y, z)` updates the camera's view direction
 
 `ERCamSetFOV(fov)` updates the camera's field of view(in degrees)
+
+`ERLoadModel(url)` loads a model from a url(must be in .obj format)
+
+`ERLoadTexture(url)` loads a texture from a url(must be .png)
