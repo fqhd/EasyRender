@@ -21,7 +21,7 @@ function ERCreateObject(model, texture) {
 			rotation: vec3.fromValues(0, 0, 0),
 			scale: vec3.fromValues(1, 1, 1),
 			matrix: mat4.create(),
-			needsMatrixUpdate: false,
+			needsMatrixUpdate: true,
 		},
 	};
 }
@@ -36,6 +36,10 @@ function loadProjection() {
 		false,
 		camera.projection
 	);
+}
+
+function loadModelMatrix(matrix) {
+	gl.uniformMatrix4fv(modelShader.uniformLocations.model, false, matrix);
 }
 
 function ERCreateModel(positions, normals, textureCoords) {
@@ -74,32 +78,40 @@ function ERInitScene(_objects) {
 
 function ERBeginRenderLoop() {
 	drawScene();
+	objects[0].transform.rotation[0] += 2;
+	objects[0].transform.needsMatrixUpdate = true;
 	requestAnimationFrame(ERBeginRenderLoop);
 }
 
 function drawScene() {
+	gl.clear(gl.COLOR_BUFFER_BIT);
 	gl.useProgram(modelShader.program);
 	updateCamera();
-	loadView();
-	loadProjection();
-	gl.clear(gl.COLOR_BUFFER_BIT);
 	for (const object of objects) {
 		drawObject(object);
 	}
 }
 
-function updateCamera(){
-	if(camera.needsProjectionUpdate){
+function updateCamera() {
+	if (camera.needsProjectionUpdate) {
 		updateProjection();
+		loadProjection();
 		camera.needsProjectionUpdate = false;
 	}
-	if(camera.needsViewUpdate){
+	if (camera.needsViewUpdate) {
 		updateView();
+		loadView();
 		camera.needsViewUpdate = false;
 	}
 }
 
 function drawObject(object) {
+	if(object.transform.needsMatrixUpdate){
+		updateModelMatrix(object.transform);
+		loadModelMatrix(object.transform.matrix);
+		object.transform.needsMatrixUpdate = false;
+	}
+
 	gl.bindBuffer(gl.ARRAY_BUFFER, object.model.buffers.posBuff);
 	gl.vertexAttribPointer(
 		modelShader.attribLocations.aPosition,
@@ -234,6 +246,29 @@ function initCamera() {
 	};
 }
 
+function updateModelMatrix(transform) {
+	mat4.fromTranslation(transform.matrix, transform.position);
+	mat4.rotate(
+		transform.matrix,
+		transform.matrix,
+		toRadians(transform.rotation[0]),
+		vec3.fromValues(1, 0, 0)
+	);
+	mat4.rotate(
+		transform.matrix,
+		transform.matrix,
+		toRadians(transform.rotation[1]),
+		vec3.fromValues(0, 1, 0)
+	);
+	mat4.rotate(
+		transform.matrix,
+		transform.matrix,
+		toRadians(transform.rotation[2]),
+		vec3.fromValues(0, 0, 1)
+	);
+	mat4.scale(transform.matrix, transform.matrix, transform.scale);
+}
+
 function createModelShader() {
 	const vSource = `
 	attribute vec3 aPosition;
@@ -246,14 +281,15 @@ function createModelShader() {
 
 	uniform mat4 projection;
 	uniform mat4 view;
+	uniform mat4 model;
 
-	const vec3 lightPos = vec3(10.0, 10.0, 10.0);
+	const vec3 lightPos = vec3(0.0, 100.0, 0.0);
 	
 	void main(){
-		vNormal = aNormal;
+		vNormal = (model * vec4(aNormal, 0.0)).xyz;
 		vUV = aUV;
 		lightDir = aPosition - lightPos;
-		gl_Position = projection * view * vec4(aPosition, 1.0);
+		gl_Position = projection * view * model * vec4(aPosition, 1.0);
 	}`;
 	const fSource = `
 	varying mediump vec3 vNormal;
@@ -281,6 +317,7 @@ function createModelShader() {
 		uniformLocations: {
 			projection: gl.getUniformLocation(program, "projection"),
 			view: gl.getUniformLocation(program, "view"),
+			model: gl.getUniformLocation(program, "model"),
 		},
 	};
 }
