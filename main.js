@@ -3,11 +3,11 @@ function main(){
 	const positions = [
 		0, 0, 0,
 		0, 1, 0,
-		1, 1, 0
+		1, 1, 0,
 	];
 	const normals = [
 		0, 0, 1,
-		0, 0, 1,
+		0, 0, 1, 
 		0, 0, 1
 	];
 	const uvs = [
@@ -21,4 +21,5 @@ function main(){
 	ERInitScene([object]);
 	ERBeginRenderLoop();
 }
+
 main();
