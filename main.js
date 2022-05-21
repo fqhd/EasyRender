@@ -17,7 +17,9 @@ function main(){
 	];
 
 	const model = ERCreateModel(positions, normals, uvs);
-	const object = ERCreateObject(model, null);
+	const texture = ERLoadTexture('./bricks.png');
+	console.log(texture);
+	const object = ERCreateObject(model, texture);
 	ERInitScene([object]);
 	ERBeginRenderLoop();
 }
