@@ -95,7 +95,49 @@ function createRawModel(positions, normals, indices) {
 	};
 }
 
-function createTexturedModel(positions, normals, indices, textureCoords) {}
+function createTexturedModel(positions, normals, indices, textureCoords) {
+	if (!checkIndices(indices)) {
+		console.error(
+			"EasyRender: invalid model indices. All indices values must be under 65536"
+		);
+	}
+	const posBuff = gl.createBuffer();
+	const normBuff = gl.createBuffer();
+	const uvBuff = gl.createBuffer();
+	const indexBuff = gl.createBuffer();
+
+	gl.bindBuffer(gl.ARRAY_BUFFER, posBuff);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+
+	gl.bindBuffer(gl.ARRAY_BUFFER, normBuff);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
+
+	gl.bindBuffer(gl.ARRAY_BUFFER, uvBuff);
+	gl.bufferData(
+		gl.ARRAY_BUFFER,
+		new Float32Array(textureCoords),
+		gl.STATIC_DRAW
+	);
+
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuff);
+	gl.bufferData(
+		gl.ELEMENT_ARRAY_BUFFER,
+		new Uint16Array(indices),
+		gl.STATIC_DRAW
+	);
+
+	numPositions = indices.length;
+
+	return {
+		buffers: {
+			posBuff,
+			normBuff,
+			uvBuff,
+			indexBuff,
+		},
+		numPositions,
+	};
+}
 
 function createNormalMappedModel(
 	positions,
@@ -128,31 +170,25 @@ function ERInitScene(_ERObjects) {
 	ERObjects = _ERObjects;
 }
 
-// loadTexture function from https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Tutorial/Using_textures_in_WebGL
-function ERLoadTexture(url) {
+function ERCreateTexture(data, w, h) {
 	const texture = gl.createTexture();
 	gl.bindTexture(gl.TEXTURE_2D, texture);
-
-	const level = 0;
-	const internalFormat = gl.RGBA;
-	const width = 1;
-	const height = 1;
-	const border = 0;
-	const srcFormat = gl.RGBA;
-	const srcType = gl.UNSIGNED_BYTE;
-	const pixel = new Uint8Array([0, 0, 255, 255]); // opaque blue
 	gl.texImage2D(
 		gl.TEXTURE_2D,
-		level,
-		internalFormat,
-		width,
-		height,
-		border,
-		srcFormat,
-		srcType,
-		pixel
+		0,
+		gl.RGBA,
+		w,
+		h,
+		0,
+		gl.RGBA,
+		gl.UNSIGNED_BYTE,
+		new Uint8Array(data)
 	);
+	return texture;
+}
 
+// TODO: repair this func
+function ERLoadTexture(url) {
 	const image = new Image();
 	image.onload = function () {
 		gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -239,6 +275,7 @@ function loadColor(color) {
 
 function drawRaw(object) {
 	loadColor(object.color);
+	gl.uniform1i(modelShader.uniformLocations.textured, 0);
 
 	gl.bindBuffer(gl.ARRAY_BUFFER, object.model.buffers.posBuff);
 	gl.vertexAttribPointer(
@@ -272,8 +309,54 @@ function drawRaw(object) {
 	);
 }
 
+function drawTextured(object) {
+	gl.bindTexture(gl.TEXTURE_2D, object.texture);
+	gl.uniform1i(modelShader.uniformLocations.textured, 1);
+
+	gl.bindBuffer(gl.ARRAY_BUFFER, object.model.buffers.posBuff);
+	gl.vertexAttribPointer(
+		modelShader.attribLocations.aPosition,
+		3,
+		gl.FLOAT,
+		false,
+		0,
+		0
+	);
+	gl.enableVertexAttribArray(modelShader.attribLocations.aPosition);
+
+	gl.bindBuffer(gl.ARRAY_BUFFER, object.model.buffers.normBuff);
+	gl.vertexAttribPointer(
+		modelShader.attribLocations.aNormal,
+		3,
+		gl.FLOAT,
+		false,
+		0,
+		0
+	);
+	gl.enableVertexAttribArray(modelShader.attribLocations.aNormal);
+
+	gl.bindBuffer(gl.ARRAY_BUFFER, object.model.buffers.uvBuff);
+	gl.vertexAttribPointer(
+		modelShader.attribLocations.aUV,
+		2,
+		gl.FLOAT,
+		false,
+		0,
+		0
+	);
+	gl.enableVertexAttribArray(modelShader.attribLocations.aUV);
+
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, object.model.buffers.indexBuff);
+
+	gl.drawElements(
+		gl.TRIANGLES,
+		object.model.numPositions,
+		gl.UNSIGNED_SHORT,
+		0
+	);
+}
+
 function drawObject(object) {
-	// RawModel
 	if (object.transform.needsMatrixUpdate) {
 		updateModelMatrix(object.transform);
 		loadModelMatrix(object.transform.matrix);
@@ -440,13 +523,22 @@ function createModelShader() {
 	varying mediump vec3 vLightDir;
 
 	uniform mediump vec3 objColor;
+	uniform sampler2D uTexture;
+	uniform int textured;
 	
 	void main(){
+		mediump vec3 fragColor;
+		if(textured == 1){
+			fragColor = texture2D(uTexture, vUV).rgb;
+		}else{
+			fragColor = objColor;
+		}
+		
 		mediump vec3 unitLightDir = normalize(vLightDir);
 		mediump float brightness = dot(unitLightDir, vNormal);
 		brightness = max(brightness, 0.2);
 		
-		gl_FragColor = vec4(objColor * brightness, 1.0);
+		gl_FragColor = vec4(fragColor * brightness, 1.0);
 	}`;
 
 	const program = createShaderProgram(vSource, fSource);
@@ -462,6 +554,7 @@ function createModelShader() {
 			view: gl.getUniformLocation(program, "view"),
 			model: gl.getUniformLocation(program, "model"),
 			color: gl.getUniformLocation(program, "objColor"),
+			textured: gl.getUniformLocation(program, "textured"),
 		},
 	};
 }
