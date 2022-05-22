@@ -1,7 +1,10 @@
 let gl;
 let modelShader;
-let objects;
+let ERObjects;
 let camera;
+// 0 -> Raw
+// 1 -> Textured
+// 2 -> Normal Mapped
 
 const { mat4, vec3 } = glMatrix;
 
@@ -12,10 +15,15 @@ function ERInit() {
 	createAllShaders();
 }
 
-function ERCreateObject(model, texture) {
+function ERCreateObject(model, texture, normalMap, color) {
+	if (!color) {
+		color = [1, 1, 1];
+	}
 	return {
 		model,
 		texture,
+		normalMap,
+		color: vec3.fromValues(...color),
 		transform: {
 			position: vec3.fromValues(0, 0, 0),
 			rotation: vec3.fromValues(0, 0, 0),
@@ -42,10 +50,25 @@ function loadModelMatrix(matrix) {
 	gl.uniformMatrix4fv(modelShader.uniformLocations.model, false, matrix);
 }
 
-function ERCreateModel(positions, normals, textureCoords) {
+function checkIndices(indices) {
+	const max = Math.pow(2, 16);
+	for (const i of indices) {
+		if (i >= max) {
+			return false;
+		}
+	}
+	return true;
+}
+
+function createRawModel(positions, normals, indices) {
+	if (!checkIndices(indices)) {
+		console.error(
+			"EasyRender: invalid model indices. All indices values must be under 65536"
+		);
+	}
 	const posBuff = gl.createBuffer();
 	const normBuff = gl.createBuffer();
-	const uvBuff = gl.createBuffer();
+	const indexBuff = gl.createBuffer();
 
 	gl.bindBuffer(gl.ARRAY_BUFFER, posBuff);
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
@@ -53,27 +76,56 @@ function ERCreateModel(positions, normals, textureCoords) {
 	gl.bindBuffer(gl.ARRAY_BUFFER, normBuff);
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
 
-	gl.bindBuffer(gl.ARRAY_BUFFER, uvBuff);
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuff);
 	gl.bufferData(
-		gl.ARRAY_BUFFER,
-		new Float32Array(textureCoords),
+		gl.ELEMENT_ARRAY_BUFFER,
+		new Uint16Array(indices),
 		gl.STATIC_DRAW
 	);
 
-	numPositions = positions.length / 3;
+	numPositions = indices.length;
 
 	return {
 		buffers: {
 			posBuff,
 			normBuff,
-			uvBuff,
+			indexBuff,
 		},
 		numPositions,
 	};
 }
 
-function ERInitScene(_objects) {
-	objects = _objects;
+function createTexturedModel(positions, normals, indices, textureCoords) {}
+
+function createNormalMappedModel(
+	positions,
+	normals,
+	indices,
+	textureCoords,
+	tangents
+) {}
+
+function ERCreateModel(positions, normals, indices, textureCoords, tangents) {
+	if (positions && normals && indices && !tangents && !textureCoords) {
+		return createRawModel(positions, normals, indices);
+	} else if (positions && normals && indices && textureCoords && !tangents) {
+		return createTexturedModel(positions, normals, indices, textureCoords);
+	} else if (positions && normals && indices && textureCoords && tangents) {
+		return createNormalMappedModel(
+			positions,
+			normals,
+			indices,
+			textureCoords,
+			tangents
+		);
+	} else {
+		console.error("EasyRender: incorrect model parameters");
+		return null;
+	}
+}
+
+function ERInitScene(_ERObjects) {
+	ERObjects = _ERObjects;
 }
 
 // loadTexture function from https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Tutorial/Using_textures_in_WebGL
@@ -132,8 +184,6 @@ function isPowerOf2(value) {
 
 function ERBeginRenderLoop() {
 	drawScene();
-	objects[0].transform.rotation[0] += 2;
-	objects[0].transform.needsMatrixUpdate = true;
 	requestAnimationFrame(ERBeginRenderLoop);
 }
 
@@ -141,7 +191,7 @@ function drawScene() {
 	gl.clear(gl.COLOR_BUFFER_BIT);
 	gl.useProgram(modelShader.program);
 	updateCamera();
-	for (const object of objects) {
+	for (const object of ERObjects) {
 		drawObject(object);
 	}
 }
@@ -159,14 +209,36 @@ function updateCamera() {
 	}
 }
 
-function drawObject(object) {
-	if (object.transform.needsMatrixUpdate) {
-		updateModelMatrix(object.transform);
-		loadModelMatrix(object.transform.matrix);
-		object.transform.needsMatrixUpdate = false;
+function getModelType(model) {
+	if (
+		model.buffers.posBuff &&
+		model.buffers.normBuff &&
+		model.buffers.indexBuff &&
+		!model.buffers.uvBuff
+	) {
+		// RawModel
+		return 0;
+	} else if (
+		model.buffers.posBuff &&
+		model.buffers.normBuff &&
+		model.buffers.indexBuff &&
+		model.buffers.uvBuff &&
+		!model.buffers.tangentBuff
+	) {
+		// Textured Model
+		return 1;
+	} else {
+		// Normal Mapped Model
+		return 2;
 	}
+}
 
-	gl.bindTexture(gl.TEXTURE_2D, object.texture);
+function loadColor(color) {
+	gl.uniform3fv(modelShader.uniformLocations.color, color);
+}
+
+function drawRaw(object) {
+	loadColor(object.color);
 
 	gl.bindBuffer(gl.ARRAY_BUFFER, object.model.buffers.posBuff);
 	gl.vertexAttribPointer(
@@ -190,18 +262,32 @@ function drawObject(object) {
 	);
 	gl.enableVertexAttribArray(modelShader.attribLocations.aNormal);
 
-	gl.bindBuffer(gl.ARRAY_BUFFER, object.model.buffers.uvBuff);
-	gl.vertexAttribPointer(
-		modelShader.attribLocations.aUV,
-		2,
-		gl.FLOAT,
-		false,
-		0,
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, object.model.buffers.indexBuff);
+
+	gl.drawElements(
+		gl.TRIANGLES,
+		object.model.numPositions,
+		gl.UNSIGNED_SHORT,
 		0
 	);
-	gl.enableVertexAttribArray(modelShader.attribLocations.aUV);
+}
 
-	gl.drawArrays(gl.TRIANGLES, 0, object.model.numPositions);
+function drawObject(object) {
+	// RawModel
+	if (object.transform.needsMatrixUpdate) {
+		updateModelMatrix(object.transform);
+		loadModelMatrix(object.transform.matrix);
+		object.transform.needsMatrixUpdate = false;
+	}
+
+	const type = getModelType(object.model);
+	if (type == 0) {
+		drawRaw(object);
+	} else if (type == 1) {
+		drawTextured(object);
+	} else {
+		drawNormalMapped(object);
+	}
 }
 
 function initWebGL() {
@@ -329,11 +415,12 @@ function createModelShader() {
 	const vSource = `
 	attribute vec3 aPosition;
 	attribute vec3 aNormal;
+	attribute vec3 aTangent;
 	attribute vec2 aUV;
 
 	varying vec3 vNormal;
+	varying vec3 vLightDir;
 	varying vec2 vUV;
-	varying vec3 lightDir;
 
 	uniform mat4 projection;
 	uniform mat4 view;
@@ -342,27 +429,25 @@ function createModelShader() {
 	const vec3 lightPos = vec3(0.0, 100.0, 0.0);
 	
 	void main(){
-		vNormal = (model * vec4(aNormal, 0.0)).xyz;
 		vUV = aUV;
-		lightDir = aPosition - lightPos;
+		vNormal = (model * vec4(aNormal, 0.0)).xyz;
+		vLightDir = aPosition - lightPos;
 		gl_Position = projection * view * model * vec4(aPosition, 1.0);
 	}`;
 	const fSource = `
 	varying mediump vec3 vNormal;
 	varying mediump vec2 vUV;
-	varying mediump vec3 lightDir;
+	varying mediump vec3 vLightDir;
 
-	uniform sampler2D uSampler;
-
+	uniform mediump vec3 objColor;
+	
 	void main(){
-		mediump vec3 unitLightDir = normalize(lightDir);
+		mediump vec3 unitLightDir = normalize(vLightDir);
 		mediump float brightness = dot(unitLightDir, vNormal);
 		brightness = max(brightness, 0.2);
-		mediump vec4 color = texture2D(uSampler, vUV);
 		
-		gl_FragColor = color;
-	}
-	`;
+		gl_FragColor = vec4(objColor * brightness, 1.0);
+	}`;
 
 	const program = createShaderProgram(vSource, fSource);
 	return {
@@ -376,6 +461,7 @@ function createModelShader() {
 			projection: gl.getUniformLocation(program, "projection"),
 			view: gl.getUniformLocation(program, "view"),
 			model: gl.getUniformLocation(program, "model"),
+			color: gl.getUniformLocation(program, "objColor"),
 		},
 	};
 }
