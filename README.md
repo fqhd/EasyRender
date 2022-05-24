@@ -74,6 +74,6 @@ ERBeginRenderLoop();
 
 `ERCamSetFOV(fov)` updates the camera's field of view(in degrees)
 
-`ERLoadModel(url)` loads a model from a url(must be in .obj format)
+`ERLoadModel(url)` loads a model from a url(must be in .obj format). Returns an object containing raw mesh data.
 
-`ERLoadTexture(url)` loads a texture from a url(must be .png)
+`ERLoadTexture(url)` loads a texture from a url(must be .png). Returns an array of texture data.

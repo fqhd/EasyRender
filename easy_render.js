@@ -494,6 +494,15 @@ function updateModelMatrix(transform) {
 	mat4.scale(transform.matrix, transform.matrix, transform.scale);
 }
 
+const getImageData = (image) => {
+	const canvas = document.createElement("canvas");
+	const context = canvas.getContext("2d");
+	canvas.width = image.width;
+	canvas.height = image.height;
+	context.drawImage(image, 0, 0);
+	return context.getImageData(0, 0, canvas.width, canvas.height);
+};
+
 function createModelShader() {
 	const vSource = `
 	attribute vec3 aPosition;
