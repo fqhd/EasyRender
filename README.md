@@ -74,8 +74,10 @@ ERBeginRenderLoop();
 
 `ERCamSetFOV(fov): void` updates the camera's field of view(in degrees)
 
-`ERLoadModel(url): Model` loads a model from a url(must be in .obj format). Returns an object containing raw mesh data.
+`ERLoadModel(url): Promise` loads a model from a url(must be in .obj format). Returns a promise that resolves to an object containing raw mesh data.
 
-`ERCreateTexture(textureData, width, height): Texture` Creates a texture from an array of data.
+`ERCreateModel(positions, normals, indices, textureCoords?, tangents?): Model` Creates a texture from an array of data.
 
 `ERLoadTexture(url): Promise` loads a texture from a url(must be .png). Returns a promise that resolves into texture object
+
+`ERCreateTexture(textureData, width, height): Texture` Creates a texture from an array of data.
