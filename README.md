@@ -66,14 +66,16 @@ ERBeginRenderLoop();
 
 ### Documentation
 
-`ERCamGetPos()` returns camera position
+`ERCamGetPos(): void` returns camera position
 
-`ERCamSetPos(x, y, z)` sets camera position
+`ERCamSetPos(x, y, z): void` sets camera position
 
-`ERCamLookAt(x, y, z)` updates the camera's view direction
+`ERCamLookAt(x, y, z): void` updates the camera's view direction
 
-`ERCamSetFOV(fov)` updates the camera's field of view(in degrees)
+`ERCamSetFOV(fov): void` updates the camera's field of view(in degrees)
 
-`ERLoadModel(url)` loads a model from a url(must be in .obj format). Returns an object containing raw mesh data.
+`ERLoadModel(url): Model` loads a model from a url(must be in .obj format). Returns an object containing raw mesh data.
 
-`ERLoadTexture(url)` loads a texture from a url(must be .png). Returns an array of texture data.
+`ERCreateTexture(textureData, width, height): Texture` Creates a texture from an array of data.
+
+`ERLoadTexture(url): Promise` loads a texture from a url(must be .png). Returns a promise that resolves into texture object
