@@ -1,7 +1,7 @@
-let gl;
-let modelShader;
-let ERObjects;
-let camera;
+let ERgl;
+let ERModelShader;
+let ERObjects = [];
+let ERCamera;
 // 0 -> Raw
 // 1 -> Textured
 // 2 -> Normal Mapped
@@ -42,20 +42,16 @@ function ERCreateObject(model, texture, normalMap, color) {
 	};
 }
 
-function loadView() {
-	gl.uniformMatrix4fv(modelShader.uniformLocations.view, false, camera.view);
+function loadView(view) {
+	ERgl.uniformMatrix4fv(ERModelShader.uniformLocations.view, false, view);
 }
 
-function loadProjection() {
-	gl.uniformMatrix4fv(
-		modelShader.uniformLocations.projection,
-		false,
-		camera.projection
-	);
+function loadProjection(proj) {
+	ERgl.uniformMatrix4fv(ERModelShader.uniformLocations.projection, false, proj);
 }
 
 function loadModelMatrix(matrix) {
-	gl.uniformMatrix4fv(modelShader.uniformLocations.model, false, matrix);
+	ERgl.uniformMatrix4fv(ERModelShader.uniformLocations.model, false, matrix);
 }
 
 function checkIndices(indices) {
@@ -74,21 +70,29 @@ function createRawModel(positions, normals, indices) {
 			"EasyRender: invalid model indices. All indices values must be under 65536"
 		);
 	}
-	const posBuff = gl.createBuffer();
-	const normBuff = gl.createBuffer();
-	const indexBuff = gl.createBuffer();
+	const posBuff = ERgl.createBuffer();
+	const normBuff = ERgl.createBuffer();
+	const indexBuff = ERgl.createBuffer();
 
-	gl.bindBuffer(gl.ARRAY_BUFFER, posBuff);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, posBuff);
+	ERgl.bufferData(
+		ERgl.ARRAY_BUFFER,
+		new Float32Array(positions),
+		ERgl.STATIC_DRAW
+	);
 
-	gl.bindBuffer(gl.ARRAY_BUFFER, normBuff);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
+	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, normBuff);
+	ERgl.bufferData(
+		ERgl.ARRAY_BUFFER,
+		new Float32Array(normals),
+		ERgl.STATIC_DRAW
+	);
 
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuff);
-	gl.bufferData(
-		gl.ELEMENT_ARRAY_BUFFER,
+	ERgl.bindBuffer(ERgl.ELEMENT_ARRAY_BUFFER, indexBuff);
+	ERgl.bufferData(
+		ERgl.ELEMENT_ARRAY_BUFFER,
 		new Uint16Array(indices),
-		gl.STATIC_DRAW
+		ERgl.STATIC_DRAW
 	);
 
 	numPositions = indices.length;
@@ -109,29 +113,37 @@ function createTexturedModel(positions, normals, indices, textureCoords) {
 			"EasyRender: invalid model indices. All indices values must be under 65536"
 		);
 	}
-	const posBuff = gl.createBuffer();
-	const normBuff = gl.createBuffer();
-	const uvBuff = gl.createBuffer();
-	const indexBuff = gl.createBuffer();
+	const posBuff = ERgl.createBuffer();
+	const normBuff = ERgl.createBuffer();
+	const uvBuff = ERgl.createBuffer();
+	const indexBuff = ERgl.createBuffer();
 
-	gl.bindBuffer(gl.ARRAY_BUFFER, posBuff);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
-
-	gl.bindBuffer(gl.ARRAY_BUFFER, normBuff);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
-
-	gl.bindBuffer(gl.ARRAY_BUFFER, uvBuff);
-	gl.bufferData(
-		gl.ARRAY_BUFFER,
-		new Float32Array(textureCoords),
-		gl.STATIC_DRAW
+	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, posBuff);
+	ERgl.bufferData(
+		ERgl.ARRAY_BUFFER,
+		new Float32Array(positions),
+		ERgl.STATIC_DRAW
 	);
 
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuff);
-	gl.bufferData(
-		gl.ELEMENT_ARRAY_BUFFER,
+	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, normBuff);
+	ERgl.bufferData(
+		ERgl.ARRAY_BUFFER,
+		new Float32Array(normals),
+		ERgl.STATIC_DRAW
+	);
+
+	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, uvBuff);
+	ERgl.bufferData(
+		ERgl.ARRAY_BUFFER,
+		new Float32Array(textureCoords),
+		ERgl.STATIC_DRAW
+	);
+
+	ERgl.bindBuffer(ERgl.ELEMENT_ARRAY_BUFFER, indexBuff);
+	ERgl.bufferData(
+		ERgl.ELEMENT_ARRAY_BUFFER,
 		new Uint16Array(indices),
-		gl.STATIC_DRAW
+		ERgl.STATIC_DRAW
 	);
 
 	numPositions = indices.length;
@@ -174,22 +186,18 @@ function ERCreateModel(positions, normals, indices, textureCoords, tangents) {
 	}
 }
 
-function ERInitScene(_ERObjects) {
-	ERObjects = _ERObjects;
-}
-
 function ERCreateTexture(data, w, h) {
-	const texture = gl.createTexture();
-	gl.bindTexture(gl.TEXTURE_2D, texture);
-	gl.texImage2D(
-		gl.TEXTURE_2D,
+	const texture = ERgl.createTexture();
+	ERgl.bindTexture(ERgl.TEXTURE_2D, texture);
+	ERgl.texImage2D(
+		ERgl.TEXTURE_2D,
 		0,
-		gl.RGBA,
+		ERgl.RGBA,
 		w,
 		h,
 		0,
-		gl.RGBA,
-		gl.UNSIGNED_BYTE,
+		ERgl.RGBA,
+		ERgl.UNSIGNED_BYTE,
 		new Uint8Array(data)
 	);
 	return texture;
@@ -200,22 +208,34 @@ async function ERLoadTexture(url) {
 		const image = new Image();
 		image.src = url;
 		image.onload = function () {
-			const texture = gl.createTexture();
-			gl.bindTexture(gl.TEXTURE_2D, texture);
-			gl.texImage2D(
-				gl.TEXTURE_2D,
+			const texture = ERgl.createTexture();
+			ERgl.bindTexture(ERgl.TEXTURE_2D, texture);
+			ERgl.texImage2D(
+				ERgl.TEXTURE_2D,
 				0,
-				gl.RGBA,
-				gl.RGBA,
-				gl.UNSIGNED_BYTE,
+				ERgl.RGBA,
+				ERgl.RGBA,
+				ERgl.UNSIGNED_BYTE,
 				image
 			);
 			if (isPowerOf2(image.width) && isPowerOf2(image.height)) {
-				gl.generateMipmap(gl.TEXTURE_2D);
+				ERgl.generateMipmap(ERgl.TEXTURE_2D);
 			} else {
-				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+				ERgl.texParameteri(
+					ERgl.TEXTURE_2D,
+					ERgl.TEXTURE_WRAP_S,
+					ERgl.CLAMP_TO_EDGE
+				);
+				ERgl.texParameteri(
+					ERgl.TEXTURE_2D,
+					ERgl.TEXTURE_WRAP_T,
+					ERgl.CLAMP_TO_EDGE
+				);
+				ERgl.texParameteri(
+					ERgl.TEXTURE_2D,
+					ERgl.TEXTURE_MIN_FILTER,
+					ERgl.LINEAR
+				);
 			}
 			resolve(texture);
 		};
@@ -271,7 +291,7 @@ function isVertexProcessed(data, index) {
 	};
 }
 
-function removeVertex(data, i){
+function removeVertex(data, i) {
 	data.positions.splice(i * 3, 3);
 	data.textureCoords.splice(i * 2, 2);
 	data.normals.splice(i * 3, 3);
@@ -420,25 +440,52 @@ function isPowerOf2(value) {
 }
 
 function ERDrawScene() {
-	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-	gl.useProgram(modelShader.program);
-	updateCamera();
+	ERgl.clear(ERgl.COLOR_BUFFER_BIT | ERgl.DEPTH_BUFFER_BIT);
+	ERgl.useProgram(ERModelShader.program);
+	loadCamera();
 	for (const object of ERObjects) {
 		drawObject(object);
 	}
 }
 
-function updateCamera() {
-	if (camera.needsProjectionUpdate) {
-		updateProjection();
-		loadProjection();
-		camera.needsProjectionUpdate = false;
-	}
-	if (camera.needsViewUpdate) {
-		updateView();
-		loadView();
-		camera.needsViewUpdate = false;
-	}
+function createView() {
+	const view = mat4.create();
+	const camPosVec = vec3.fromValues(
+		ERCamera.position.x,
+		ERCamera.position.y,
+		ERCamera.position.z
+	);
+	const camForwardVec = vec3.fromValues(
+		ERCamera.forward.x,
+		ERCamera.forward.y,
+		ERCamera.forward.z
+	);
+	mat4.lookAt(
+		view,
+		camPosVec,
+		vec3.add(vec3.create(), camPosVec, camForwardVec),
+		vec3.fromValues(0, 1, 0)
+	);
+	return view;
+}
+
+function createProj() {
+	const proj = mat4.create();
+	mat4.perspective(
+		proj,
+		toRadians(ERCamera.fov),
+		ERgl.canvas.clientWidth / ERgl.canvas.clientHeight,
+		0.1,
+		1000.0
+	);
+	return proj;
+}
+
+function loadCamera() {
+	const view = createView();
+	const proj = createProj();
+	loadProjection(proj);
+	loadView(view);
 }
 
 function getModelType(model) {
@@ -466,88 +513,88 @@ function getModelType(model) {
 }
 
 function loadColor(color) {
-	gl.uniform3fv(modelShader.uniformLocations.color, color);
+	ERgl.uniform3fv(ERModelShader.uniformLocations.color, color);
 }
 
 function drawRaw(object) {
 	loadColor(object.color);
-	gl.uniform1i(modelShader.uniformLocations.textured, 0);
+	ERgl.uniform1i(ERModelShader.uniformLocations.textured, 0);
 
-	gl.bindBuffer(gl.ARRAY_BUFFER, object.model.buffers.posBuff);
-	gl.vertexAttribPointer(
-		modelShader.attribLocations.aPosition,
+	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, object.model.buffers.posBuff);
+	ERgl.vertexAttribPointer(
+		ERModelShader.attribLocations.aPosition,
 		3,
-		gl.FLOAT,
+		ERgl.FLOAT,
 		false,
 		0,
 		0
 	);
-	gl.enableVertexAttribArray(modelShader.attribLocations.aPosition);
+	ERgl.enableVertexAttribArray(ERModelShader.attribLocations.aPosition);
 
-	gl.bindBuffer(gl.ARRAY_BUFFER, object.model.buffers.normBuff);
-	gl.vertexAttribPointer(
-		modelShader.attribLocations.aNormal,
+	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, object.model.buffers.normBuff);
+	ERgl.vertexAttribPointer(
+		ERModelShader.attribLocations.aNormal,
 		3,
-		gl.FLOAT,
+		ERgl.FLOAT,
 		false,
 		0,
 		0
 	);
-	gl.enableVertexAttribArray(modelShader.attribLocations.aNormal);
+	ERgl.enableVertexAttribArray(ERModelShader.attribLocations.aNormal);
 
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, object.model.buffers.indexBuff);
+	ERgl.bindBuffer(ERgl.ELEMENT_ARRAY_BUFFER, object.model.buffers.indexBuff);
 
-	gl.drawElements(
-		gl.TRIANGLES,
+	ERgl.drawElements(
+		ERgl.TRIANGLES,
 		object.model.numPositions,
-		gl.UNSIGNED_SHORT,
+		ERgl.UNSIGNED_SHORT,
 		0
 	);
 }
 
 function drawTextured(object) {
-	gl.bindTexture(gl.TEXTURE_2D, object.texture);
-	gl.uniform1i(modelShader.uniformLocations.textured, 1);
+	ERgl.bindTexture(ERgl.TEXTURE_2D, object.texture);
+	ERgl.uniform1i(ERModelShader.uniformLocations.textured, 1);
 
-	gl.bindBuffer(gl.ARRAY_BUFFER, object.model.buffers.posBuff);
-	gl.vertexAttribPointer(
-		modelShader.attribLocations.aPosition,
+	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, object.model.buffers.posBuff);
+	ERgl.vertexAttribPointer(
+		ERModelShader.attribLocations.aPosition,
 		3,
-		gl.FLOAT,
+		ERgl.FLOAT,
 		false,
 		0,
 		0
 	);
-	gl.enableVertexAttribArray(modelShader.attribLocations.aPosition);
+	ERgl.enableVertexAttribArray(ERModelShader.attribLocations.aPosition);
 
-	gl.bindBuffer(gl.ARRAY_BUFFER, object.model.buffers.normBuff);
-	gl.vertexAttribPointer(
-		modelShader.attribLocations.aNormal,
+	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, object.model.buffers.normBuff);
+	ERgl.vertexAttribPointer(
+		ERModelShader.attribLocations.aNormal,
 		3,
-		gl.FLOAT,
+		ERgl.FLOAT,
 		false,
 		0,
 		0
 	);
-	gl.enableVertexAttribArray(modelShader.attribLocations.aNormal);
+	ERgl.enableVertexAttribArray(ERModelShader.attribLocations.aNormal);
 
-	gl.bindBuffer(gl.ARRAY_BUFFER, object.model.buffers.uvBuff);
-	gl.vertexAttribPointer(
-		modelShader.attribLocations.aUV,
+	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, object.model.buffers.uvBuff);
+	ERgl.vertexAttribPointer(
+		ERModelShader.attribLocations.aUV,
 		2,
-		gl.FLOAT,
+		ERgl.FLOAT,
 		false,
 		0,
 		0
 	);
-	gl.enableVertexAttribArray(modelShader.attribLocations.aUV);
+	ERgl.enableVertexAttribArray(ERModelShader.attribLocations.aUV);
 
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, object.model.buffers.indexBuff);
+	ERgl.bindBuffer(ERgl.ELEMENT_ARRAY_BUFFER, object.model.buffers.indexBuff);
 
-	gl.drawElements(
-		gl.TRIANGLES,
+	ERgl.drawElements(
+		ERgl.TRIANGLES,
 		object.model.numPositions,
-		gl.UNSIGNED_SHORT,
+		ERgl.UNSIGNED_SHORT,
 		0
 	);
 }
@@ -579,53 +626,34 @@ function drawObject(object) {
 
 function initWebGL() {
 	const canvas = document.getElementById("ERCanvas");
-	gl = canvas.getContext("webgl");
+	ERgl = canvas.getContext("webgl");
 }
 
 function initGLState() {
-	gl.clearColor(0, 0, 0, 1);
-	gl.enable(gl.DEPTH_TEST);
+	ERgl.clearColor(0, 0, 0, 1);
+	ERgl.enable(ERgl.DEPTH_TEST);
 }
 
 function createShaderProgram(vSource, fSource) {
-	const program = gl.createProgram();
-	const vs = createShader(gl, gl.VERTEX_SHADER, vSource);
-	const fs = createShader(gl, gl.FRAGMENT_SHADER, fSource);
-	gl.attachShader(program, vs);
-	gl.attachShader(program, fs);
-	gl.linkProgram(program);
-	if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+	const program = ERgl.createProgram();
+	const vs = createShader(ERgl.VERTEX_SHADER, vSource);
+	const fs = createShader(ERgl.FRAGMENT_SHADER, fSource);
+	ERgl.attachShader(program, vs);
+	ERgl.attachShader(program, fs);
+	ERgl.linkProgram(program);
+	if (!ERgl.getProgramParameter(program, ERgl.LINK_STATUS)) {
 		console.error("Failed to link program");
 	}
 
 	return program;
 }
 
-function ERCamGetPos() {
-	return camera.position;
-}
-
-function ERCamSetPos(x, y, z) {
-	vec3.set(camera.position, x, y, z);
-	camera.needsViewUpdate = true;
-}
-
-function ERCamLookAt(x, y, z) {
-	vec3.set(camera.forward, x, y, z);
-	camera.needsViewUpdate = true;
-}
-
-function ERCamSetFOV(fov) {
-	camera.fov = fov;
-	camera.needsProjectionUpdate = true;
-}
-
-function createShader(gl, type, source) {
-	const shader = gl.createShader(type);
-	gl.shaderSource(shader, source);
-	gl.compileShader(shader);
-	if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-		if (type == gl.VERTEX_SHADER) {
+function createShader(type, source) {
+	const shader = ERgl.createShader(type);
+	ERgl.shaderSource(shader, source);
+	ERgl.compileShader(shader);
+	if (!ERgl.getShaderParameter(shader, ERgl.COMPILE_STATUS)) {
+		if (type == ERgl.VERTEX_SHADER) {
 			console.error("Failed to compile vertex shader");
 		} else {
 			console.error("Failed to compile fragment shader");
@@ -635,44 +663,26 @@ function createShader(gl, type, source) {
 }
 
 function createAllShaders() {
-	modelShader = createModelShader();
+	ERModelShader = createModelShader();
 }
 
 function toRadians(r) {
 	return (r * Math.PI) / 180;
 }
 
-function updateView() {
-	mat4.lookAt(
-		camera.view,
-		camera.position,
-		vec3.add(vec3.create(), camera.position, camera.forward),
-		vec3.fromValues(0, 1, 0)
-	);
-}
-
-function updateProjection() {
-	mat4.perspective(
-		camera.projection,
-		toRadians(camera.fov),
-		gl.canvas.clientWidth / gl.canvas.clientHeight,
-		0.1,
-		1000.0
-	);
-}
-
 function initCamera() {
-	const position = vec3.fromValues(0, 0, -5);
-	const forward = vec3.fromValues(0, 0, 1);
-	const fov = 70;
-	camera = {
-		position,
-		forward,
-		fov,
-		needsViewUpdate: true,
-		needsProjectionUpdate: true,
-		projection: mat4.create(),
-		view: mat4.create(),
+	ERCamera = {
+		position: {
+			x: 0,
+			y: 0,
+			z: 0,
+		},
+		forward: {
+			x: 0,
+			y: 0,
+			z: 1,
+		},
+		fov: 70,
 	};
 }
 
@@ -760,16 +770,16 @@ function createModelShader() {
 	return {
 		program,
 		attribLocations: {
-			aPosition: gl.getAttribLocation(program, "aPosition"),
-			aNormal: gl.getAttribLocation(program, "aNormal"),
-			aUV: gl.getAttribLocation(program, "aUV"),
+			aPosition: ERgl.getAttribLocation(program, "aPosition"),
+			aNormal: ERgl.getAttribLocation(program, "aNormal"),
+			aUV: ERgl.getAttribLocation(program, "aUV"),
 		},
 		uniformLocations: {
-			projection: gl.getUniformLocation(program, "projection"),
-			view: gl.getUniformLocation(program, "view"),
-			model: gl.getUniformLocation(program, "model"),
-			color: gl.getUniformLocation(program, "objColor"),
-			textured: gl.getUniformLocation(program, "textured"),
+			projection: ERgl.getUniformLocation(program, "projection"),
+			view: ERgl.getUniformLocation(program, "view"),
+			model: ERgl.getUniformLocation(program, "model"),
+			color: ERgl.getUniformLocation(program, "objColor"),
+			textured: ERgl.getUniformLocation(program, "textured"),
 		},
 	};
 }
