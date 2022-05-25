@@ -5,10 +5,6 @@ async function main() {
 	const { positions, normals, indices, textureCoords } = await ERLoadModel(
 		"./model.obj"
 	);
-	console.log(positions);
-	console.log(normals);
-	console.log(indices);
-	console.log(textureCoords);
 
 	const model = ERCreateModel(positions, normals, indices, textureCoords);
 	const texture = await ERLoadTexture("./bricks.png");
