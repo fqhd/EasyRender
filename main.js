@@ -1,3 +1,5 @@
+let objects;
+
 async function main() {
 	// Initialize the library
 	ERInit();
@@ -15,7 +17,7 @@ async function main() {
 	const ourObject = ERCreateObject(model, texture);
 
 	// Make a list of the objects you would like to draw
-	const objects = [ourObject];
+	objects = [ourObject];
 
 	// Tell EasyRender about the objects you would like to render
 	ERInitScene(objects);
@@ -25,6 +27,8 @@ async function main() {
 }
 
 function beginRenderLoop() {
+	objects[0].rotation.x += 1;
+	objects[0].rotation.z += 1;
 	ERDrawScene();
 	requestAnimationFrame(beginRenderLoop);
 }

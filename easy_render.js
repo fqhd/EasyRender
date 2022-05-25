@@ -23,13 +23,21 @@ function ERCreateObject(model, texture, normalMap, color) {
 		model,
 		texture,
 		normalMap,
-		color: vec3.fromValues(...color),
-		transform: {
-			position: vec3.fromValues(0, 0, 0),
-			rotation: vec3.fromValues(0, 0, 0),
-			scale: vec3.fromValues(1, 1, 1),
-			matrix: mat4.create(),
-			needsMatrixUpdate: true,
+		color: color,
+		position: {
+			x: 0,
+			y: 0,
+			z: 0,
+		},
+		rotation: {
+			x: 0,
+			y: 0,
+			z: 0,
+		},
+		scale: {
+			x: 1,
+			y: 1,
+			z: 1,
 		},
 	};
 }
@@ -490,12 +498,20 @@ function drawTextured(object) {
 	);
 }
 
+function createModelMatrix(position, rotation, scale) {
+	const matrix = mat4.create();
+	mat4.fromTranslation(matrix, [position.x, position.y, position.z]);
+	mat4.rotate(matrix, matrix, toRadians(rotation.x), vec3.fromValues(1, 0, 0));
+	mat4.rotate(matrix, matrix, toRadians(rotation.y), vec3.fromValues(0, 1, 0));
+	mat4.rotate(matrix, matrix, toRadians(rotation.z), vec3.fromValues(0, 0, 1));
+	mat4.scale(matrix, matrix, [scale.x, scale.y, scale.z]);
+	return matrix;
+}
+
 function drawObject(object) {
-	if (object.transform.needsMatrixUpdate) {
-		updateModelMatrix(object.transform);
-		loadModelMatrix(object.transform.matrix);
-		object.transform.needsMatrixUpdate = false;
-	}
+	const { position, rotation, scale } = object;
+	const modelMatrix = createModelMatrix(position, rotation, scale);
+	loadModelMatrix(modelMatrix);
 
 	const type = getModelType(object.model);
 	if (type == 0) {
