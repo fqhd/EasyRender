@@ -2,19 +2,13 @@ async function main() {
 	// Initialize the library
 	ERInit();
 
-	// Define the positions, normals, and textureCoords of your model (These will generally be loaded from a file)
-	const positions = [0, 0, 0, 0.5, 1, 0, 1, 0, 0];
-	const normals = [0, 0, -1, 0, 0, -1, 0, 0, -1];
-	const textureCoords = [0, 0, 0.5, 1, 1, 0];
-	const indices = [0, 1, 2];
-
-	// Define the textureData of your model(This will also generally be loaded in from a file)
-	const textureData = [
-		0,
-		0,
-		255,
-		255, // This will make 1 opaque blue pixel
-	];
+	const { positions, normals, indices, textureCoords } = await ERLoadModel(
+		"./model.obj"
+	);
+	console.log(positions);
+	console.log(normals);
+	console.log(indices);
+	console.log(textureCoords);
 
 	const model = ERCreateModel(positions, normals, indices, textureCoords);
 	const texture = await ERLoadTexture("./bricks.png");
@@ -27,7 +21,12 @@ async function main() {
 	ERInitScene(objects);
 
 	// Start the render loop
-	ERBeginRenderLoop();
+	beginRenderLoop();
+}
+
+function beginRenderLoop() {
+	ERDrawScene();
+	requestAnimationFrame(beginRenderLoop);
 }
 
 main();
