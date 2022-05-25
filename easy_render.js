@@ -91,7 +91,7 @@ function createRawModel(positions, normals, indices) {
 		gl.STATIC_DRAW
 	);
 
-	numPositions = indices.length / 3;
+	numPositions = indices.length;
 
 	return {
 		buffers: {
@@ -134,7 +134,7 @@ function createTexturedModel(positions, normals, indices, textureCoords) {
 		gl.STATIC_DRAW
 	);
 
-	numPositions = indices.length / 3;
+	numPositions = indices.length;
 
 	return {
 		buffers: {
@@ -231,10 +231,64 @@ async function ERLoadModel(url) {
 	return data;
 }
 
+function areVerticesIdentical(v1, v2) {
+	for (let i = 0; i < v1.length; i++) {
+		if (v1[i] != v2[i]) {
+			return false;
+		}
+	}
+	return true;
+}
+
+function getVertex(data, index) {
+	return [
+		data.positions[index * 3],
+		data.positions[index * 3 + 1],
+		data.positions[index * 3 + 2],
+		data.normals[index * 3],
+		data.normals[index * 3 + 1],
+		data.normals[index * 3 + 2],
+		data.textureCoords[index * 2],
+		data.textureCoords[index * 2 + 1],
+	];
+}
+
+// O(log(n))
+function isVertexProcessed(data, index) {
+	const v1 = getVertex(data, index);
+	for (let i = 0; i < index; i++) {
+		const v2 = getVertex(data, i);
+		if (areVerticesIdentical(v1, v2)) {
+			return {
+				processed: true,
+				i,
+			};
+		}
+	}
+	return {
+		processed: false,
+		i: null,
+	};
+}
+
+function removeVertex(data, i){
+	data.positions.splice(i * 3, 3);
+	data.textureCoords.splice(i * 2, 2);
+	data.normals.splice(i * 3, 3);
+	data.tangents.splice(i * 3, 3);
+}
+
 function optimizeModel(data) {
 	const indices = [];
-	for (let i = 0; i < data.positions.length; i++) {
-		indices.push(i);
+	for (let i = 0; i < data.positions.length / 3; i++) {
+		const v = isVertexProcessed(data, i);
+		if (v.processed) {
+			indices.push(v.i);
+			removeVertex(data, i);
+			i--; // This is important please don't remove it
+		} else {
+			indices.push(i);
+		}
 	}
 	data.indices = indices;
 }
