@@ -673,9 +673,10 @@ function createModelShader() {
 	
 	void main(){
 		vUV = aUV;
+		vec4 worldPos = model * vec4(aPosition, 1.0);
 		vNormal = (model * vec4(aNormal, 0.0)).xyz;
-		vLightDir = aPosition - lightPos;
-		gl_Position = projection * view * model * vec4(aPosition, 1.0);
+		vLightDir = lightPos - worldPos.xyz;
+		gl_Position = projection * view * worldPos;
 	}`;
 	const fSource = `
 	varying mediump vec3 vNormal;
