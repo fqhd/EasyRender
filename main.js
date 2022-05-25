@@ -2,17 +2,24 @@ async function main() {
 	// Initialize the library
 	ERInit();
 
+	// Load the model data
 	const { positions, normals, indices, textureCoords } = await ERLoadModel(
 		"./model.obj"
 	);
 
+	// Create the model object
 	const model = ERCreateModel(positions, normals, indices, textureCoords);
-	const texture = await ERLoadTexture("./bricks.png");
-	const ourObject = ERCreateObject(model, texture);
 
-	// Make a list of the objects you would like to draw
+	// Load texture
+	const texture = await ERLoadTexture("./bricks.png");
+
+	// Create ERObjectj
+	const ourObject = ERCreateObject(model, texture, null);
+
+	// Add the objects you want to draw to the global ERObjects array
 	ERObjects.push(ourObject);
 
+	// Move the camera outside the object
 	ERCamera.position.z = -10;
 
 	// Start the render loop

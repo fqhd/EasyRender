@@ -17,13 +17,13 @@ function ERInit() {
 
 function ERCreateObject(model, texture, normalMap, color) {
 	if (!color) {
-		color = [1, 1, 1];
+		color = [255, 255, 255];
 	}
 	return {
 		model,
 		texture,
 		normalMap,
-		color: color,
+		color,
 		position: {
 			x: 0,
 			y: 0,
@@ -488,32 +488,24 @@ function loadCamera() {
 	loadView(view);
 }
 
-function getModelType(model) {
-	if (
-		model.buffers.posBuff &&
-		model.buffers.normBuff &&
-		model.buffers.indexBuff &&
-		!model.buffers.uvBuff
-	) {
-		// RawModel
-		return 0;
-	} else if (
-		model.buffers.posBuff &&
-		model.buffers.normBuff &&
-		model.buffers.indexBuff &&
-		model.buffers.uvBuff &&
-		!model.buffers.tangentBuff
-	) {
+function getObjectType(object) {
+	if (object.normalMap) {
+		// Normal Mapped Model
+		return 2;
+	} else if (object.texture) {
 		// Textured Model
 		return 1;
 	} else {
-		// Normal Mapped Model
-		return 2;
+		// Raw Model
+		return 0;
 	}
 }
 
 function loadColor(color) {
-	ERgl.uniform3fv(ERModelShader.uniformLocations.color, color);
+	ERgl.uniform3fv(
+		ERModelShader.uniformLocations.color,
+		vec3.fromValues(color[0] / 255, color[1] / 255, color[2] / 255)
+	);
 }
 
 function drawRaw(object) {
@@ -614,7 +606,7 @@ function drawObject(object) {
 	const modelMatrix = createModelMatrix(position, rotation, scale);
 	loadModelMatrix(modelMatrix);
 
-	const type = getModelType(object.model);
+	const type = getObjectType(object);
 	if (type == 0) {
 		drawRaw(object);
 	} else if (type == 1) {
