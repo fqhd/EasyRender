@@ -24,6 +24,8 @@ function ERCreateObject(model, texture, normalMap, color) {
 		texture,
 		normalMap,
 		color,
+		shininess: 10,
+		reflectivity: 1,
 		position: {
 			x: 0,
 			y: 0,
@@ -42,11 +44,13 @@ function ERCreateObject(model, texture, normalMap, color) {
 	};
 }
 
-function loadView(view) {
+function loadView() {
+	const view = createView();
 	ERgl.uniformMatrix4fv(ERModelShader.uniformLocations.view, false, view);
 }
 
-function loadProjection(proj) {
+function loadProjection() {
+	const proj = createProj();
 	ERgl.uniformMatrix4fv(ERModelShader.uniformLocations.projection, false, proj);
 }
 
@@ -482,10 +486,16 @@ function createProj() {
 }
 
 function loadCamera() {
-	const view = createView();
-	const proj = createProj();
-	loadProjection(proj);
-	loadView(view);
+	loadProjection();
+	loadView();
+	loadCamPos();
+}
+
+function loadCamPos(){
+	ERgl.uniform3fv(
+		ERModelShader.uniformLocations.camPos,
+		vec3.fromValues(ERCamera.position.x, ERCamera.position.y, ERCamera.position.z)
+	);
 }
 
 function getObjectType(object) {
@@ -511,6 +521,8 @@ function loadColor(color) {
 function drawRaw(object) {
 	loadColor(object.color);
 	ERgl.uniform1i(ERModelShader.uniformLocations.textured, 0);
+	ERgl.uniform1f(ERModelShader.uniformLocations.shininess, object.shininess);
+	ERgl.uniform1f(ERModelShader.uniformLocations.reflectivity, object.reflectivity);
 
 	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, object.model.buffers.posBuff);
 	ERgl.vertexAttribPointer(
@@ -547,6 +559,8 @@ function drawRaw(object) {
 function drawTextured(object) {
 	ERgl.bindTexture(ERgl.TEXTURE_2D, object.texture);
 	ERgl.uniform1i(ERModelShader.uniformLocations.textured, 1);
+	ERgl.uniform1f(ERModelShader.uniformLocations.shininess, object.shininess);
+	ERgl.uniform1f(ERModelShader.uniformLocations.reflectivity, object.reflectivity);
 
 	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, object.model.buffers.posBuff);
 	ERgl.vertexAttribPointer(
@@ -720,29 +734,35 @@ function createModelShader() {
 	varying vec3 vNormal;
 	varying vec3 vLightDir;
 	varying vec2 vUV;
+	varying vec3 toCamVec;
 
 	uniform mat4 projection;
 	uniform mat4 view;
 	uniform mat4 model;
+	uniform vec3 camPos;
 
 	const vec3 lightPos = vec3(0.0, 100.0, 0.0);
-	
+
 	void main(){
 		vUV = aUV;
 		vec4 worldPos = model * vec4(aPosition, 1.0);
 		vNormal = (model * vec4(aNormal, 0.0)).xyz;
-		vLightDir = lightPos - worldPos.xyz;
+		vLightDir = worldPos.xyz - lightPos;
+		toCamVec = camPos - worldPos.xyz;
 		gl_Position = projection * view * worldPos;
 	}`;
 	const fSource = `
 	varying mediump vec3 vNormal;
 	varying mediump vec2 vUV;
 	varying mediump vec3 vLightDir;
+	varying mediump vec3 toCamVec;
 
 	uniform mediump vec3 objColor;
 	uniform sampler2D uTexture;
 	uniform int textured;
-	
+	uniform mediump float shininess;
+	uniform mediump float reflectivity;
+
 	void main(){
 		mediump vec3 fragColor;
 		if(textured == 1){
@@ -750,12 +770,23 @@ function createModelShader() {
 		}else{
 			fragColor = objColor;
 		}
-		
+
 		mediump vec3 unitLightDir = normalize(vLightDir);
-		mediump float brightness = dot(unitLightDir, vNormal);
+		mediump vec3 unitNormal = normalize(vNormal);
+		mediump vec3 unitToCamVec = normalize(toCamVec);
+		mediump vec3 reflected = reflect(unitLightDir, unitNormal);
+
+		// Diffuse calculation
+		mediump float brightness = dot(-unitLightDir, unitNormal);
 		brightness = max(brightness, 0.2);
-		
-		gl_FragColor = vec4(fragColor * brightness, 1.0);
+
+		// Specular Calculation
+		mediump float specFactor = dot(reflected, unitToCamVec);
+		specFactor = max(specFactor, 0.0);
+		specFactor = pow(specFactor, shininess);
+		mediump vec3 finalSpec = vec3(1.0) * reflectivity * specFactor;
+
+		gl_FragColor = vec4(fragColor * brightness + finalSpec, 1.0);
 	}`;
 
 	const program = createShaderProgram(vSource, fSource);
@@ -772,6 +803,9 @@ function createModelShader() {
 			model: ERgl.getUniformLocation(program, "model"),
 			color: ERgl.getUniformLocation(program, "objColor"),
 			textured: ERgl.getUniformLocation(program, "textured"),
+			camPos: ERgl.getUniformLocation(program, "camPos"),
+			shininess: ERgl.getUniformLocation(program, "shininess"),
+			reflectivity: ERgl.getUniformLocation(program, "reflectivity"),
 		},
 	};
 }

@@ -28,7 +28,7 @@ async function main() {
 
 function beginRenderLoop() {
 	ERObjects[0].rotation.x += 1;
-	ERObjects[0].rotation.z += 1;
+	// ERObjects[0].rotation.z += 1;
 	ERDrawScene();
 	requestAnimationFrame(beginRenderLoop);
 }
