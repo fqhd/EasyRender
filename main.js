@@ -16,26 +16,23 @@ async function main() {
 
 	// Create ERObjectj
 	const ourObject = ERCreateObject(model, texture, normalmap);
+	ourObject.reflectivity = 0.4;
+	ourObject.shininess = 50;
 
 	// Add the objects you want to draw to the global ERObjects array
 	ERObjects.push(ourObject);
 
-	ourObject.reflectivity = 0.5;
-	ourObject.shininess = 3;
-
 	// Move the camera outside the object
 	ERCamera.position.z = -5;
-	// ERCamera.position.y = 2;
-	// ERCamera.forward.y = -1;
+	ERCamera.position.y = 6;
+	ERCamera.forward.y = -0.5;
 
 	// Start the render loop
 	beginRenderLoop();
 }
 
 function beginRenderLoop() {
-	// ERObjects[0].rotation.y += 1;
 	ERObjects[0].rotation.x += 1;
-	
 	
 	ERDrawScene();
 	requestAnimationFrame(beginRenderLoop);
