@@ -267,78 +267,8 @@ function createTexturedModel(positions, normals, indices, textureCoords) {
 	};
 }
 
-<<<<<<< HEAD
 function ERCreateModel(positions, normals, indices, textureCoords) {
 	if (positions && normals && indices && textureCoords) {
-=======
-function createNormalMappedModel(
-	positions,
-	normals,
-	indices,
-	textureCoords,
-	tangents
-) {
-	checkIndices(indices);
-	const posBuff = ERgl.createBuffer();
-	const normBuff = ERgl.createBuffer();
-	const tanBuff = ERgl.createBuffer();
-	const uvBuff = ERgl.createBuffer();
-	const indexBuff = ERgl.createBuffer();
-
-	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, posBuff);
-	ERgl.bufferData(
-		ERgl.ARRAY_BUFFER,
-		new Float32Array(positions),
-		ERgl.STATIC_DRAW
-	);
-
-	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, normBuff);
-	ERgl.bufferData(
-		ERgl.ARRAY_BUFFER,
-		new Float32Array(normals),
-		ERgl.STATIC_DRAW
-	);
-
-	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, tanBuff);
-	ERgl.bufferData(
-		ERgl.ARRAY_BUFFER,
-		new Float32Array(tangents),
-		ERgl.STATIC_DRAW
-	);
-
-	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, uvBuff);
-	ERgl.bufferData(
-		ERgl.ARRAY_BUFFER,
-		new Float32Array(textureCoords),
-		ERgl.STATIC_DRAW
-	);
-
-	ERgl.bindBuffer(ERgl.ELEMENT_ARRAY_BUFFER, indexBuff);
-	ERgl.bufferData(
-		ERgl.ELEMENT_ARRAY_BUFFER,
-		new Uint16Array(indices),
-		ERgl.STATIC_DRAW
-	);
-
-	const numPositions = indices.length;
-
-	return {
-		buffers: {
-			posBuff,
-			normBuff,
-			tanBuff,
-			uvBuff,
-			indexBuff,
-		},
-		numPositions,
-	};
-}
-
-function ERCreateModel(positions, normals, indices, textureCoords, tangents) {
-	if (positions && normals && indices && !tangents && !textureCoords) {
-		return createRawModel(positions, normals, indices);
-	} else if (positions && normals && indices && textureCoords && !tangents) {
->>>>>>> 7503f87ab25e80049765daec01d62ae5ffceb4a5
 		return createTexturedModel(positions, normals, indices, textureCoords);
 	} else if (positions && normals && indices) {
 		return createRawModel(positions, normals, indices);
@@ -711,81 +641,6 @@ function drawObject(object) {
 	}
 }
 
-<<<<<<< HEAD
-=======
-function drawNormalMapped(object) {
-	ERgl.uniform1i(ERModelShader.uniformLocations.v_NMapped, 1);
-	ERgl.uniform1i(ERModelShader.uniformLocations.f_NMapped, 1);
-	ERgl.uniform1i(ERModelShader.uniformLocations.dTexture, 0);
-	ERgl.activeTexture(ERgl.TEXTURE0);
-	ERgl.bindTexture(ERgl.TEXTURE_2D, object.texture);
-
-	ERgl.uniform1i(ERModelShader.uniformLocations.nTexture, 1);
-	ERgl.activeTexture(ERgl.TEXTURE1);
-	ERgl.bindTexture(ERgl.TEXTURE_2D, object.normalMap);
-
-	ERgl.uniform1i(ERModelShader.uniformLocations.textured, 1);
-	ERgl.uniform1f(ERModelShader.uniformLocations.shininess, object.shininess);
-	ERgl.uniform1f(
-		ERModelShader.uniformLocations.reflectivity,
-		object.reflectivity
-	);
-
-	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, object.model.buffers.posBuff);
-	ERgl.vertexAttribPointer(
-		ERModelShader.attribLocations.aPosition,
-		3,
-		ERgl.FLOAT,
-		false,
-		0,
-		0
-	);
-	ERgl.enableVertexAttribArray(ERModelShader.attribLocations.aPosition);
-
-	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, object.model.buffers.normBuff);
-	ERgl.vertexAttribPointer(
-		ERModelShader.attribLocations.aNormal,
-		3,
-		ERgl.FLOAT,
-		false,
-		0,
-		0
-	);
-	ERgl.enableVertexAttribArray(ERModelShader.attribLocations.aNormal);
-
-	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, object.model.buffers.tanBuff);
-	ERgl.vertexAttribPointer(
-		ERModelShader.attribLocations.aTangent,
-		3,
-		ERgl.FLOAT,
-		false,
-		0,
-		0
-	);
-	ERgl.enableVertexAttribArray(ERModelShader.attribLocations.aTangent);
-
-	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, object.model.buffers.uvBuff);
-	ERgl.vertexAttribPointer(
-		ERModelShader.attribLocations.aUV,
-		2,
-		ERgl.FLOAT,
-		false,
-		0,
-		0
-	);
-	ERgl.enableVertexAttribArray(ERModelShader.attribLocations.aUV);
-
-	ERgl.bindBuffer(ERgl.ELEMENT_ARRAY_BUFFER, object.model.buffers.indexBuff);
-
-	ERgl.drawElements(
-		ERgl.TRIANGLES,
-		object.model.numPositions,
-		ERgl.UNSIGNED_SHORT,
-		0
-	);
-}
-
->>>>>>> 7503f87ab25e80049765daec01d62ae5ffceb4a5
 function initWebGL() {
 	const canvas = document.getElementById("ERCanvas");
 	ERgl = canvas.getContext("webgl");
@@ -904,26 +759,8 @@ function createModelShader() {
 		
 		vToCamVec = camPos - worldPos.xyz;
 
-<<<<<<< HEAD
 		vLightDir = lightDir;
 		vToCamVec = camPos - worldPos.xyz;
-=======
-		// Calculating tangent matrix
-		if(v_NMapped == 1){
-			vec3 tangent = normalize((model * vec4(aTangent, 0.0)).xyz);
-			vec3 bitangent = normalize(cross(vNormal, tangent));
-			mat3 TBN = mat3(
-				tangent.x, bitangent.x, vNormal.x,
-				tangent.y, bitangent.y, vNormal.y,
-				tangent.z, bitangent.z, vNormal.z
-			);
-			vLightDir = TBN * lightDir;
-			vToCamVec = TBN * (camPos - worldPos.xyz);
-		}else{
-			vLightDir = lightDir;
-			vToCamVec = camPos - worldPos.xyz;
-		}
->>>>>>> 7503f87ab25e80049765daec01d62ae5ffceb4a5
 	}`;
 	const fSource = `
 	varying mediump vec3 vNormal;
