@@ -5,6 +5,7 @@ let ERSkyboxShader;
 let ERSkyboxModel;
 let ERObjects = [];
 let ERCamera;
+let ERShadowMap;
 
 const { mat4, vec3 } = glMatrix;
 
@@ -474,9 +475,9 @@ function createView() {
 		ERCamera.position.z
 	);
 	const camForwardVec = vec3.fromValues(
-		Math.cos(toRadians(ERCamera.yaw)) * Math.cos(toRadians(ERCamera.pitch)),
+		Math.sin(toRadians(ERCamera.yaw)) * Math.cos(toRadians(ERCamera.pitch)),
 		Math.sin(toRadians(ERCamera.pitch)),
-		Math.sin(toRadians(ERCamera.yaw)) * Math.cos(toRadians(ERCamera.pitch))
+		Math.cos(toRadians(ERCamera.yaw)) * Math.cos(toRadians(ERCamera.pitch))
 	);
 	mat4.lookAt(
 		view,
@@ -631,6 +632,39 @@ function drawObject(object) {
 function initWebGL() {
 	const canvas = document.getElementById("ERCanvas");
 	ERgl = canvas.getContext("webgl");
+}
+
+function createShadowMap(){
+	const SHADOW_WIDTH = 1024;
+	const SHADOW_HEIGHT = 1024;
+
+	const framebuffer = ERgl.createFramebuffer();
+	const texture = ERgl.createTexture();
+	ERgl.bindTexture(ERgl.TEXTURE_2D, texture);
+	ERgl.texImage2D(ERgl.TEXTURE_2D, 0, ERgl.DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, ERgl.DEPTH_COMPONENT, ERgl.FLOAT, null)
+	ERgl.texParameteri(ERgl.TEXTURE_2D, ERgl.TEXTURE_MIN_FILTER, ERgl.NEAREST);
+	ERgl.texParameteri(ERgl.TEXTURE_2D, ERgl.TEXTURE_MAG_FILTER, ERgl.NEAREST);
+	ERgl.texParameteri(ERgl.TEXTURE_2D, ERgl.TEXTURE_WRAP_S, ERgl.REPEAT);
+	ERgl.texParameteri(ERgl.TEXTURE_2D, ERgl.TEXTURE_WRAP_T, ERgl.REPEAT);
+
+	ERgl.bindFramebuffer(ERgl.FRAMEBUFFER, framebuffer);
+	ERgl.framebufferTexture2D(ERgl.FRAMEBUFFER, ERgl.DEPTH_ATTACHMENT, ERgl.TEXTURE_2D, texture, 0);
+	ERgl.drawBuffer(ERgl.NONE);
+	ERgl.readBuffer(ERgl.NONE);
+
+	ERShadowMap = { framebuffer, texture };
+}
+
+function bindShadowMap(){
+
+}
+
+function drawToShadowMap(){
+
+}
+
+function unbindShadowMap(){
+
 }
 
 function initGLState() {

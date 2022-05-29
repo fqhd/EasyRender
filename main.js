@@ -48,6 +48,7 @@ async function main() {
 	// Move the camera outside the object
 	ERCamera.position.z = -5;
 	ERCamera.position.y = 6;
+	ERCamera.pitch = -30;
 	ourObject2.scale.x = 100;
 	ourObject2.scale.z = 100;
 
@@ -57,7 +58,6 @@ async function main() {
 
 function beginRenderLoop() {
 	ERObjects[0].rotation.x += 1;
-	ERCamera.pitch += 1;
 	
 	ERDrawScene();
 	requestAnimationFrame(beginRenderLoop);
