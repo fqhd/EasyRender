@@ -27,8 +27,8 @@ function createSkyboxModel() {
 		-1, 1,
 	];
 	const indices = [
-		0, 1, 2, 0, 2, 3, 1, 5, 6, 1, 6, 2, 4, 6, 5, 4, 7, 6, 4, 5, 1, 4, 1, 0, 3,
-		2, 6, 3, 6, 7, 4, 0, 3, 4, 3, 7,
+		1, 0, 2, 2, 0, 3, 5, 1, 6, 6, 1, 2, 6, 4, 5, 7, 4, 6, 5, 4, 1, 1, 4, 0, 2,
+		3, 6, 6, 3, 7, 0, 4, 3, 3, 4, 7,
 	];
 
 	const posBuff = ERgl.createBuffer();
@@ -474,9 +474,9 @@ function createView() {
 		ERCamera.position.z
 	);
 	const camForwardVec = vec3.fromValues(
-		ERCamera.forward.x,
-		ERCamera.forward.y,
-		ERCamera.forward.z
+		Math.cos(toRadians(ERCamera.yaw)) * Math.cos(toRadians(ERCamera.pitch)),
+		Math.sin(toRadians(ERCamera.pitch)),
+		Math.sin(toRadians(ERCamera.yaw)) * Math.cos(toRadians(ERCamera.pitch))
 	);
 	mat4.lookAt(
 		view,
@@ -526,11 +526,6 @@ function loadColor(color) {
 function drawRaw(object) {
 	loadColor(object.color);
 	ERgl.uniform1i(ERModelShader.uniformLocations.textured, 0);
-	ERgl.uniform1f(ERModelShader.uniformLocations.shininess, object.shininess);
-	ERgl.uniform1f(
-		ERModelShader.uniformLocations.reflectivity,
-		object.reflectivity
-	);
 
 	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, object.model.buffers.posBuff);
 	ERgl.vertexAttribPointer(
@@ -565,16 +560,8 @@ function drawRaw(object) {
 }
 
 function drawTextured(object) {
-	ERgl.activeTexture(ERgl.TEXTURE0);
 	ERgl.bindTexture(ERgl.TEXTURE_2D, object.texture);
-	ERgl.uniform1i(ERModelShader.uniformLocations.v_NMapped, 0);
-	ERgl.uniform1i(ERModelShader.uniformLocations.f_NMapped, 0);
 	ERgl.uniform1i(ERModelShader.uniformLocations.textured, 1);
-	ERgl.uniform1f(ERModelShader.uniformLocations.shininess, object.shininess);
-	ERgl.uniform1f(
-		ERModelShader.uniformLocations.reflectivity,
-		object.reflectivity
-	);
 
 	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, object.model.buffers.posBuff);
 	ERgl.vertexAttribPointer(
@@ -650,6 +637,7 @@ function initGLState() {
 	ERgl.clearColor(0, 0, 0, 1);
 	ERgl.enable(ERgl.DEPTH_TEST);
 	ERgl.depthFunc(ERgl.LEQUAL);
+	ERgl.enable(ERgl.CULL_FACE);
 }
 
 function createShaderProgram(vSource, fSource) {
@@ -691,11 +679,8 @@ function initCamera() {
 			y: 0,
 			z: 0,
 		},
-		forward: {
-			x: 0,
-			y: 0,
-			z: 1,
-		},
+		pitch: 0,
+		yaw: 0,
 		fov: 70,
 	};
 }
