@@ -1,66 +1,23 @@
-function getPlane(){
-	const positions = [
-		-1, 0, -1,
-		-1, 0, 1,
-		1, 0, 1,
-		1, 0, -1
-	];
-	const indices = [
-		0, 1, 2,
-		0, 2, 3
-	];
-	const normals = [
-		0, 1, 0,
-		0, 1, 0,
-		0, 1, 0,
-		0, 1, 0
-	];
-	const model = ERCreateModel(positions, normals, indices);
-	return model;
-}
+// Initialize the library
+ERInit();
 
-async function main() {
-	// Initialize the library
-	ERInit();
+// Define the positions, normals, and textureCoords of your model (These will generally be loaded from a file)
+const positions = [-1, -1, 0, 0, 1, 0, 1, -1, 0];
+const normals = [0, 0, 1, 0, 0, 1, 0, 0, 1];
+const indices = [1, 0, 2];
 
-	// Load the model data
-	const { positions, normals, indices, textureCoords } = await ERLoadModel(
-		"./model.obj"
-	);
-	const plane = getPlane();
+// Create an ERObject from the model
+const model = ERCreateModel(positions, normals, indices);
+const ourObject = ERCreateObject(model, null, [0, 255, 0]); // no texture and a green color
+ourObject.position.z = -10; // pushing the model away from the camera
 
-	// Create the model object
-	const model = ERCreateModel(positions, normals, indices, textureCoords);
+// Add objects to list of objects to draw
+ERObjects.push(ourObject);
 
-	// Load texture
-	const texture = await ERLoadTexture("./bricks_texture.jpg");
+// Start the animation
+animate();
 
-	// Create ERObjectj
-	const ourObject = ERCreateObject(model, texture);
-	ourObject.reflectivity = 0.4;
-	ourObject.shininess = 50;
-	const ourObject2 = ERCreateObject(plane);
-
-	// Add the objects you want to draw to the global ERObjects array
-	ERObjects.push(ourObject);
-	ERObjects.push(ourObject2);
-
-	// Move the camera outside the object
-	ERCamera.position.z = -5;
-	ERCamera.position.y = 6;
-	ERCamera.pitch = -30;
-	ourObject2.scale.x = 100;
-	ourObject2.scale.z = 100;
-
-	// Start the render loop
-	beginRenderLoop();
-}
-
-function beginRenderLoop() {
-	ERObjects[0].rotation.x += 1;
-	
+function animate() {
 	ERDrawScene();
-	requestAnimationFrame(beginRenderLoop);
+	requestAnimationFrame(animate);
 }
-
-main();

@@ -25,43 +25,25 @@ Here is a small example to get you started using the library.
 ERInit();
 
 // Define the positions, normals, and textureCoords of your model (These will generally be loaded from a file)
-const positions = [
-	0, 0, 0,
-	0.5, 1, 0,
-	1, 0, 0,
-];
-const normals = [
-	0, 0, -1,
-	0, 0, -1,
-	0, 0, -1,
-];
-const indices = [
-	0, 1, 2
-];
-const textureCoords = [
-	0, 0,
-	0.5, 1,
-	1, 0
-];
+const positions = [-1, -1, 0, 0, 1, 0, 1, -1, 0];
+const normals = [0, 0, 1, 0, 0, 1, 0, 0, 1];
+const indices = [1, 0, 2];
 
-// Define the textureData of your model(This will also generally be loaded in from a file)
-const textureData = [
-	0, 0, 255, 255 // This will make 1 opaque blue pixel
-];
-
-// Create the model and texture
+// Create an ERObject from the model
 const model = ERCreateModel(positions, normals, indices);
-const texture = ERCreateTexture(textureData);
-const ourObject = ERCreateObject(model, texture);
+const ourObject = ERCreateObject(model, null, [0, 255, 0]); // no texture and a green color
+ourObject.position.z = -10; // pushing the model away from the camera
 
-// Make a list of the objects you would like to draw
-const objects = [ourObject];
+// Add objects to list of objects to draw
+ERObjects.push(ourObject);
 
-// Tell EasyRender about the objects you would like to render
-ERInitScene(objects);
+// Start the animation
+animate();
 
-// Start the render loop
-ERBeginRenderLoop();
+function animate() {
+	ERDrawScene();
+	requestAnimationFrame(animate);
+}
 ```
 
 ### Documentation
