@@ -483,7 +483,7 @@ function createView() {
 	const camForwardVec = vec3.fromValues(
 		Math.sin(toRadians(ERCamera.yaw)) * Math.cos(toRadians(ERCamera.pitch)),
 		Math.sin(toRadians(ERCamera.pitch)),
-		-Math.cos(toRadians(ERCamera.yaw)) * Math.cos(toRadians(ERCamera.pitch))
+		Math.cos(toRadians(ERCamera.yaw)) * Math.cos(toRadians(ERCamera.pitch))
 	);
 	mat4.lookAt(
 		view,
