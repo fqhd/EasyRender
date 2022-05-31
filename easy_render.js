@@ -6,15 +6,17 @@ let ERSkyboxModel;
 let ERObjects = [];
 let ERCamera;
 let ERShadowMap;
+const SHADOW_WIDTH = 1024;
+const SHADOW_HEIGHT = 1024;
 
 const { mat4, vec3 } = glMatrix;
 
 function ERInit() {
 	initWebGL();
-	initGLState();
 	initCamera();
 	createModelShader();
 	createSkybox();
+	createShadowMap();
 }
 
 function createSkybox() {
@@ -454,9 +456,9 @@ async function loadModelData(url) {
 }
 
 function ERDrawScene() {
-	ERgl.clear(ERgl.COLOR_BUFFER_BIT | ERgl.DEPTH_BUFFER_BIT);
-	drawSkybox();
+	drawToShadowMap();
 	drawObjects();
+	drawSkybox();
 }
 
 function drawObjects() {
@@ -632,16 +634,21 @@ function drawObject(object) {
 function initWebGL() {
 	const canvas = document.getElementById("ERCanvas");
 	ERgl = canvas.getContext("webgl");
+	ERgl.clearColor(0, 0, 0, 1);
+	ERgl.enable(ERgl.DEPTH_TEST);
+	ERgl.depthFunc(ERgl.LEQUAL);
+	ERgl.enable(ERgl.CULL_FACE);
+	if(!ERgl.getExtension("WEBGL_depth_texture")){
+		alert("Your browser doesn't support the WEBGL_depth_texture extension. This application may not work");
+		console.log("Missing Extension: WEBGL_depth_texture");
+	}
 }
 
 function createShadowMap(){
-	const SHADOW_WIDTH = 1024;
-	const SHADOW_HEIGHT = 1024;
-
 	const framebuffer = ERgl.createFramebuffer();
 	const texture = ERgl.createTexture();
 	ERgl.bindTexture(ERgl.TEXTURE_2D, texture);
-	ERgl.texImage2D(ERgl.TEXTURE_2D, 0, ERgl.DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, ERgl.DEPTH_COMPONENT, ERgl.FLOAT, null)
+	ERgl.texImage2D(ERgl.TEXTURE_2D, 0, ERgl.DEPTH_COMPONENT, 1024, 1024, 0, ERgl.DEPTH_COMPONENT, ERgl.UNSIGNED_SHORT, null);
 	ERgl.texParameteri(ERgl.TEXTURE_2D, ERgl.TEXTURE_MIN_FILTER, ERgl.NEAREST);
 	ERgl.texParameteri(ERgl.TEXTURE_2D, ERgl.TEXTURE_MAG_FILTER, ERgl.NEAREST);
 	ERgl.texParameteri(ERgl.TEXTURE_2D, ERgl.TEXTURE_WRAP_S, ERgl.REPEAT);
@@ -649,29 +656,26 @@ function createShadowMap(){
 
 	ERgl.bindFramebuffer(ERgl.FRAMEBUFFER, framebuffer);
 	ERgl.framebufferTexture2D(ERgl.FRAMEBUFFER, ERgl.DEPTH_ATTACHMENT, ERgl.TEXTURE_2D, texture, 0);
-	ERgl.drawBuffer(ERgl.NONE);
-	ERgl.readBuffer(ERgl.NONE);
 
 	ERShadowMap = { framebuffer, texture };
 }
 
 function bindShadowMap(){
-
+	ERgl.bindFramebuffer(ERgl.FRAMEBUFFER, ERShadowMap.framebuffer);
+	ERgl.clear(ERgl.DEPTH_BUFFER_BIT);
+	ERgl.viewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
 }
 
 function drawToShadowMap(){
+	bindShadowMap();
 
+	unbindShadowMap();
 }
 
 function unbindShadowMap(){
-
-}
-
-function initGLState() {
-	ERgl.clearColor(0, 0, 0, 1);
-	ERgl.enable(ERgl.DEPTH_TEST);
-	ERgl.depthFunc(ERgl.LEQUAL);
-	ERgl.enable(ERgl.CULL_FACE);
+	ERgl.bindFramebuffer(ERgl.FRAMEBUFFER, null);
+	ERgl.clear(ERgl.DEPTH_BUFFER_BIT);
+	ERgl.viewport(0, 0, ERgl.canvas.clientWidth, ERgl.canvas.clientHeight);
 }
 
 function createShaderProgram(vSource, fSource) {
