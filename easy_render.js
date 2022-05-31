@@ -1,11 +1,12 @@
 "use strict";
 let ERgl;
+let ERSkybox = {};
+let ERShadowMap = {};
 let ERModelShader;
-let ERSkyboxShader;
-let ERSkyboxModel;
 let ERObjects = [];
 let ERCamera;
-let ERShadowMap;
+let quad;
+let qshader;
 const SHADOW_WIDTH = 1024;
 const SHADOW_HEIGHT = 1024;
 
@@ -17,6 +18,47 @@ function ERInit() {
 	createModelShader();
 	createSkybox();
 	createShadowMap();
+	createQuad();
+}
+
+function createQuad() {
+	const pos = [
+		-1, 1,
+		-1, -1,
+		1, 1,
+
+		-1, -1, 1, -1, 1, 1,
+	];
+
+	quad = ERgl.createBuffer();
+	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, quad);
+	ERgl.bufferData(ERgl.ARRAY_BUFFER, new Float32Array(pos), ERgl.STATIC_DRAW);
+
+	const vSource = `
+	attribute vec2 aPosition;
+
+	varying vec2 vUV;
+
+	void main(){
+		vUV = (aPosition + vec2(1.0)) / 2.0;
+		gl_Position = vec4(aPosition, 0.0, 1.0);
+	}`;
+	const fSource = `
+	varying mediump vec2 vUV;
+
+	uniform sampler2D uTexture;
+
+	void main(){
+		gl_FragColor = texture2D(uTexture, vUV);
+	}`;
+
+	const program = createShaderProgram(vSource, fSource);
+	qshader = {
+		program,
+		attribLocations: {
+			aPosition: ERgl.getAttribLocation(program, "aPosition"),
+		},
+	};
 }
 
 function createSkybox() {
@@ -50,7 +92,7 @@ function createSkyboxModel() {
 		ERgl.STATIC_DRAW
 	);
 
-	ERSkyboxModel = {
+	ERSkybox.model = {
 		posBuff,
 		indicesBuff,
 	};
@@ -86,7 +128,7 @@ function createSkyboxShader() {
 	}
 	`;
 	const program = createShaderProgram(vSource, fSource);
-	ERSkyboxShader = {
+	ERSkybox.shader = {
 		program,
 		attribLocations: {
 			aPosition: ERgl.getAttribLocation(program, "aPosition"),
@@ -99,11 +141,11 @@ function createSkyboxShader() {
 }
 
 function drawSkybox() {
-	ERgl.useProgram(ERSkyboxShader.program);
+	ERgl.useProgram(ERSkybox.shader.program);
 
 	// Load projection
 	ERgl.uniformMatrix4fv(
-		ERSkyboxShader.uniformLocations.projection,
+		ERSkybox.shader.uniformLocations.projection,
 		false,
 		createProj()
 	);
@@ -113,20 +155,20 @@ function drawSkybox() {
 	view[12] = 0;
 	view[13] = 0;
 	view[14] = 0;
-	ERgl.uniformMatrix4fv(ERSkyboxShader.uniformLocations.view, false, view);
+	ERgl.uniformMatrix4fv(ERSkybox.shader.uniformLocations.view, false, view);
 
-	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, ERSkyboxModel.posBuff);
+	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, ERSkybox.model.posBuff);
 	ERgl.vertexAttribPointer(
-		ERSkyboxShader.attribLocations.aPosition,
+		ERSkybox.shader.attribLocations.aPosition,
 		3,
 		ERgl.FLOAT,
 		false,
 		0,
 		0
 	);
-	ERgl.enableVertexAttribArray(ERSkyboxShader.attribLocations.aPosition);
+	ERgl.enableVertexAttribArray(ERSkybox.shader.attribLocations.aPosition);
 
-	ERgl.bindBuffer(ERgl.ELEMENT_ARRAY_BUFFER, ERSkyboxModel.indicesBuff);
+	ERgl.bindBuffer(ERgl.ELEMENT_ARRAY_BUFFER, ERSkybox.model.indicesBuff);
 
 	ERgl.drawElements(ERgl.TRIANGLES, 36, ERgl.UNSIGNED_BYTE, 0);
 }
@@ -459,9 +501,27 @@ function ERDrawScene() {
 	drawToShadowMap();
 	drawObjects();
 	drawSkybox();
+	drawQuad();
 }
 
-function ERInitScene(objects){
+function drawQuad() {
+	ERgl.useProgram(qshader.program);
+	ERgl.bindTexture(ERgl.TEXTURE_2D, ERShadowMap.texture);
+	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, quad);
+	ERgl.vertexAttribPointer(
+		qshader.attribLocations.aPosition,
+		2,
+		ERgl.FLOAT,
+		false,
+		0,
+		0
+	);
+	ERgl.enableVertexAttribArray(qshader.attribLocations.aPosition);
+
+	ERgl.drawArrays(ERgl.TRIANGLES, 0, 6);
+}
+
+function ERInitScene(objects) {
 	ERObjects = objects;
 }
 
@@ -642,41 +702,117 @@ function initWebGL() {
 	ERgl.enable(ERgl.DEPTH_TEST);
 	ERgl.depthFunc(ERgl.LEQUAL);
 	ERgl.enable(ERgl.CULL_FACE);
-	if(!ERgl.getExtension("WEBGL_depth_texture")){
-		alert("Your browser doesn't support the WEBGL_depth_texture extension. This application may not work");
+	if (!ERgl.getExtension("WEBGL_depth_texture")) {
+		alert(
+			"Your browser doesn't support the WEBGL_depth_texture extension. This application may not work"
+		);
 		console.log("Missing Extension: WEBGL_depth_texture");
 	}
 }
 
-function createShadowMap(){
+function createShadowMap() {
 	const framebuffer = ERgl.createFramebuffer();
 	const texture = ERgl.createTexture();
 	ERgl.bindTexture(ERgl.TEXTURE_2D, texture);
-	ERgl.texImage2D(ERgl.TEXTURE_2D, 0, ERgl.DEPTH_COMPONENT, 1024, 1024, 0, ERgl.DEPTH_COMPONENT, ERgl.UNSIGNED_SHORT, null);
+	ERgl.texImage2D(
+		ERgl.TEXTURE_2D,
+		0,
+		ERgl.DEPTH_COMPONENT,
+		SHADOW_WIDTH,
+		SHADOW_HEIGHT,
+		0,
+		ERgl.DEPTH_COMPONENT,
+		ERgl.UNSIGNED_SHORT,
+		null
+	);
 	ERgl.texParameteri(ERgl.TEXTURE_2D, ERgl.TEXTURE_MIN_FILTER, ERgl.NEAREST);
 	ERgl.texParameteri(ERgl.TEXTURE_2D, ERgl.TEXTURE_MAG_FILTER, ERgl.NEAREST);
 	ERgl.texParameteri(ERgl.TEXTURE_2D, ERgl.TEXTURE_WRAP_S, ERgl.REPEAT);
 	ERgl.texParameteri(ERgl.TEXTURE_2D, ERgl.TEXTURE_WRAP_T, ERgl.REPEAT);
 
 	ERgl.bindFramebuffer(ERgl.FRAMEBUFFER, framebuffer);
-	ERgl.framebufferTexture2D(ERgl.FRAMEBUFFER, ERgl.DEPTH_ATTACHMENT, ERgl.TEXTURE_2D, texture, 0);
+	ERgl.framebufferTexture2D(
+		ERgl.FRAMEBUFFER,
+		ERgl.DEPTH_ATTACHMENT,
+		ERgl.TEXTURE_2D,
+		texture,
+		0
+	);
+	ERgl.bindFramebuffer(ERgl.FRAMEBUFFER, null);
 
-	ERShadowMap = { framebuffer, texture };
+	const matrix = createLightSpaceMatrix();
+	const shader = createShadowMapShader();
+
+	ERShadowMap = { framebuffer, texture, matrix, shader };
 }
 
-function bindShadowMap(){
+function createLightSpaceMatrix() {
+	const near = 1;
+	const far = 50;
+	const proj = mat4.ortho(mat4.create(), -10, 10, -10, 10, near, far);
+	const lightView = mat4.lookAt(
+		mat4.create(),
+		vec3.fromValues(1, 10, 1),
+		vec3.fromValues(0, 0, 0),
+		vec3.fromValues(0, 1, 0)
+	);
+	const lightSpaceMatrix = mat4.mul(mat4.create(), proj, lightView);
+	return lightSpaceMatrix;
+}
+
+function bindShadowMap() {
 	ERgl.bindFramebuffer(ERgl.FRAMEBUFFER, ERShadowMap.framebuffer);
 	ERgl.clear(ERgl.DEPTH_BUFFER_BIT);
 	ERgl.viewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
 }
 
-function drawToShadowMap(){
+function drawToShadowMap() {
 	bindShadowMap();
-
+	drawShadows();
 	unbindShadowMap();
 }
 
-function unbindShadowMap(){
+function drawShadows() {
+	ERgl.useProgram(ERShadowMap.shader.program);
+	ERgl.uniformMatrix4fv(
+		ERShadowMap.shader.uniformLocations.lightSpaceMatrix,
+		false,
+		ERShadowMap.matrix
+	);
+	for (const obj of ERObjects) {
+		const { position, rotation, scale } = obj;
+		ERgl.uniformMatrix4fv(
+			ERShadowMap.shader.uniformLocations.model,
+			false,
+			createModelMatrix(position, rotation, scale)
+		);
+		drawObjectShadow(obj);
+	}
+}
+
+function drawObjectShadow(obj) {
+	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, obj.model.buffers.posBuff);
+	ERgl.vertexAttribPointer(
+		ERShadowMap.shader.attribLocations.aPosition,
+		3,
+		ERgl.FLOAT,
+		false,
+		0,
+		0
+	);
+	ERgl.enableVertexAttribArray(ERShadowMap.shader.attribLocations.aPosition);
+
+	ERgl.bindBuffer(ERgl.ELEMENT_ARRAY_BUFFER, obj.model.buffers.indexBuff);
+
+	ERgl.drawElements(
+		ERgl.TRIANGLES,
+		obj.model.numPositions,
+		ERgl.UNSIGNED_SHORT,
+		0
+	);
+}
+
+function unbindShadowMap() {
 	ERgl.bindFramebuffer(ERgl.FRAMEBUFFER, null);
 	ERgl.clear(ERgl.DEPTH_BUFFER_BIT);
 	ERgl.viewport(0, 0, ERgl.canvas.clientWidth, ERgl.canvas.clientHeight);
@@ -758,6 +894,35 @@ const getImageData = (image) => {
 	context.drawImage(image, 0, 0);
 	return context.getImageData(0, 0, canvas.width, canvas.height);
 };
+
+function createShadowMapShader() {
+	const vSource = `
+	attribute vec3 aPosition;
+
+	uniform mat4 lightSpaceMatrix;
+	uniform mat4 model;
+
+	void main(){
+		gl_Position = lightSpaceMatrix * model * vec4(aPosition, 1.0);
+	}`;
+	const fSource = `
+
+	void main(){
+		
+	}`;
+
+	const program = createShaderProgram(vSource, fSource);
+	return {
+		program,
+		attribLocations: {
+			aPosition: ERgl.getAttribLocation(program, "aPosition"),
+		},
+		uniformLocations: {
+			lightSpaceMatrix: ERgl.getUniformLocation(program, "lightSpaceMatrix"),
+			model: ERgl.getUniformLocation(program, "model"),
+		},
+	};
+}
 
 function createModelShader() {
 	const vSource = `

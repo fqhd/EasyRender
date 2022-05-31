@@ -35,7 +35,7 @@ async function main() {
 	// Load texture
 	const texture = await ERLoadTexture("./bricks_texture.jpg");
 
-	// Create ERObjectj
+	// Create ERObject
 	const cube = ERCreateObject(model, texture);
 	const floor = ERCreateObject(plane);
 
@@ -56,7 +56,7 @@ async function main() {
 
 function animate() {
 	ERObjects[0].rotation.x += 1;
-	
+	ERCamera.yaw += 1;
 	ERDrawScene();
 	requestAnimationFrame(animate);
 }
