@@ -10,7 +10,7 @@ let qshader;
 const SHADOW_WIDTH = 1024;
 const SHADOW_HEIGHT = 1024;
 
-const { mat4, vec3 } = glMatrix;
+const { mat4, vec3, vec4 } = glMatrix;
 
 function ERInit() {
 	initWebGL();
@@ -49,7 +49,8 @@ function createQuad() {
 	uniform sampler2D uTexture;
 
 	void main(){
-		gl_FragColor = texture2D(uTexture, vUV);
+		mediump float dv = texture2D(uTexture, vUV).r;
+		gl_FragColor = vec4(vec3(dv), 1.0);
 	}`;
 
 	const program = createShaderProgram(vSource, fSource);
@@ -501,7 +502,7 @@ function ERDrawScene() {
 	drawToShadowMap();
 	drawObjects();
 	drawSkybox();
-	drawQuad();
+	// drawQuad();
 }
 
 function drawQuad() {
@@ -527,6 +528,9 @@ function ERInitScene(objects) {
 
 function drawObjects() {
 	ERgl.useProgram(ERModelShader.program);
+	ERgl.activeTexture(ERgl.TEXTURE1);
+	ERgl.bindTexture(ERgl.TEXTURE_2D, ERShadowMap.texture);
+	ERgl.uniformMatrix4fv(ERModelShader.uniformLocations.lightSpaceMatrix, false, ERShadowMap.matrix);
 	loadCamera();
 	for (const object of ERObjects) {
 		drawObject(object);
@@ -627,6 +631,7 @@ function drawRaw(object) {
 }
 
 function drawTextured(object) {
+	ERgl.activeTexture(ERgl.TEXTURE0);
 	ERgl.bindTexture(ERgl.TEXTURE_2D, object.texture);
 	ERgl.uniform1i(ERModelShader.uniformLocations.textured, 1);
 
@@ -748,11 +753,11 @@ function createShadowMap() {
 
 function createLightSpaceMatrix() {
 	const near = 1;
-	const far = 50;
-	const proj = mat4.ortho(mat4.create(), -10, 10, -10, 10, near, far);
+	const far = 100;
+	const proj = mat4.ortho(mat4.create(), -50, 50, -50, 50, near, far);
 	const lightView = mat4.lookAt(
 		mat4.create(),
-		vec3.fromValues(1, 10, 1),
+		vec3.fromValues(1, 50, 1),
 		vec3.fromValues(0, 0, 0),
 		vec3.fromValues(0, 1, 0)
 	);
@@ -934,17 +939,23 @@ function createModelShader() {
 	varying vec3 vLightDir;
 	varying vec2 vUV;
 	varying vec3 vToCamVec;
+	varying vec3 vFragPos;
+	varying vec4 vFragPosLightSpace;
 
 	uniform mat4 projection;
 	uniform mat4 view;
 	uniform mat4 model;
 	uniform vec3 camPos;
+	uniform mat4 lightSpaceMatrix;
 
 	const vec3 lightDir = vec3(0.0, -1.0, -1.0);
 
 	void main(){
 		vec4 worldPos = model * vec4(aPosition, 1.0);
 		gl_Position = projection * view * worldPos;
+
+		vFragPos = worldPos.xyz;
+		vFragPosLightSpace = lightSpaceMatrix * vec4(vFragPos, 1.0);
 
 		vUV = aUV;
 		vNormal = (model * vec4(aNormal, 0.0)).xyz;
@@ -959,13 +970,35 @@ function createModelShader() {
 	varying mediump vec2 vUV;
 	varying mediump vec3 vToCamVec;
 	varying mediump vec3 vLightDir;
+	varying mediump vec3 vFragPos;
+	varying mediump vec4 vFragPosLightSpace;
 
 	uniform mediump vec3 objColor;
 	uniform sampler2D uTexture;
+	uniform sampler2D shadowMap;
 	uniform int textured;
 
 	const mediump float shininess = 2.0;
 	const mediump float reflectivity = 0.3;
+
+	mediump float ShadowCalculation(mediump vec4 fragPosLightSpace){
+		// perform perspective divide
+		mediump vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+
+		// transform to [0,1] range
+		projCoords = projCoords * 0.5 + 0.5;
+
+		// get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
+		mediump float closestDepth = texture2D(shadowMap, projCoords.xy).r;
+
+		// get depth of current fragment from light's perspective
+		mediump float currentDepth = projCoords.z;
+
+		// check whether current frag pos is in shadow
+		mediump float shadow = currentDepth > closestDepth ? 0.0 : 1.0;
+
+		return shadow;
+	}
 
 	void main(){
 		mediump vec3 fragColor;
@@ -992,7 +1025,10 @@ function createModelShader() {
 		specFactor = pow(specFactor, shininess);
 		mediump vec3 finalSpec = vec3(1.0) * reflectivity * specFactor;
 
-		gl_FragColor = vec4(fragColor * brightness + finalSpec, 1.0);
+		// Shadow
+		mediump float shadow = ShadowCalculation(vFragPosLightSpace);
+
+		gl_FragColor = vec4(fragColor * shadow + finalSpec * shadow, 1.0);
 	}`;
 
 	const program = createShaderProgram(vSource, fSource);
@@ -1011,6 +1047,11 @@ function createModelShader() {
 			textured: ERgl.getUniformLocation(program, "textured"),
 			camPos: ERgl.getUniformLocation(program, "camPos"),
 			uTexture: ERgl.getUniformLocation(program, "uTexture"),
+			shadowMap: ERgl.getUniformLocation(program, "shadowMap"),
+			lightSpaceMatrix: ERgl.getUniformLocation(program, "lightSpaceMatrix"),
 		},
 	};
+	ERgl.useProgram(program);
+	ERgl.uniform1i(ERModelShader.uniformLocations.uTexture, 0);
+	ERgl.uniform1i(ERModelShader.uniformLocations.shadowMap, 1);
 }

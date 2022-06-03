@@ -43,20 +43,26 @@ async function main() {
 	ERObjects.push(cube);
 	ERObjects.push(floor);
 
+	cube.position.y = 3;
+	cube.position.x = 3;
+
 	// Move the camera outside the object
-	ERCamera.position.z = -5;
-	ERCamera.position.y = 6;
-	ERCamera.pitch = -30;
-	floor.scale.x = 100;
-	floor.scale.z = 100;
+	ERCamera.position.z = -30;
+	ERCamera.position.y = 20;
+	ERCamera.pitch = -45;
+	floor.scale.x = 45;
+	floor.scale.z = 45;
 
 	// Start the render loop
 	animate();
 }
 
 function animate() {
+	ERObjects[0].rotation.z += 1;
 	ERObjects[0].rotation.x += 1;
-	ERCamera.yaw += 1;
+	ERObjects[0].position.x -= 0.03;
+	ERObjects[0].position.z += 0.03;
+
 	ERDrawScene();
 	requestAnimationFrame(animate);
 }
