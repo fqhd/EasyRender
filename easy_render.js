@@ -589,7 +589,7 @@ function calcLightSpaceMatrix() {
 	const far = 100;
 	const proj = mat4.ortho(mat4.create(), -30, 30, -30, 30, near, far);
 	const camForwardVec = calcForwardVec();
-	const shadowMapPos = vec3.fromValues(ERCamera.x + 5, 20, ERCamera.z - 15);
+	const shadowMapPos = vec3.fromValues(ERCamera.x + 24, 25, ERCamera.z - 20);
 	const lightView = mat4.lookAt(
 		mat4.create(),
 		shadowMapPos,
@@ -838,7 +838,7 @@ function createModelShader() {
 			for(int y = -3; y <= 3; ++y)
 			{
 				mediump float pcfDepth = texture2D(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r; 
-				shadow += currentDepth - bias > pcfDepth ? 0.1 : 1.0;        
+				shadow += currentDepth - bias > pcfDepth ? 0.3 : 1.0;        
 			}    
 		}
 		shadow /= 49.0;

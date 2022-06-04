@@ -43,7 +43,8 @@ async function main() {
 }
 
 function animate() {
-	// cube.position.z += 0.1;
+	// cube.rotation.x += 1;
+	// cube.rotation.y += 1;
 	// ERSetCamPos(cube.position.x, cube.position.z - 10)
 
 	ERDrawScene();
