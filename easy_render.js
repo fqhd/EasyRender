@@ -4,11 +4,10 @@ let ERShadowMap;
 let ERModelShader;
 let ERObjects = [];
 let ERCamera;
-const CAM_PITCH = -50;
+const CAM_PITCH = -41;
 const CAM_YAW = 0;
 const CAM_Y = 10;
 const SHADOW_WIDTH = 1024;
-const SHADOW_HEIGHT = 1024;
 
 const { mat4, vec3, vec4 } = glMatrix;
 
@@ -356,7 +355,11 @@ function drawObjects() {
 	ERgl.useProgram(ERModelShader.program);
 	ERgl.activeTexture(ERgl.TEXTURE1);
 	ERgl.bindTexture(ERgl.TEXTURE_2D, ERShadowMap.texture);
-	ERgl.uniformMatrix4fv(ERModelShader.uniformLocations.lightSpaceMatrix, false, ERShadowMap.matrix);
+	ERgl.uniformMatrix4fv(
+		ERModelShader.uniformLocations.lightSpaceMatrix,
+		false,
+		calcLightSpaceMatrix()
+	);
 	loadCamera();
 	for (const object of ERObjects) {
 		drawObject(object);
@@ -365,16 +368,8 @@ function drawObjects() {
 
 function createView() {
 	const view = mat4.create();
-	const camPosVec = vec3.fromValues(
-		ERCamera.x,
-		CAM_Y,
-		ERCamera.z
-	);
-	const camForwardVec = vec3.fromValues(
-		Math.sin(toRadians(CAM_YAW)) * Math.cos(toRadians(CAM_PITCH)),
-		Math.sin(toRadians(CAM_PITCH)),
-		Math.cos(toRadians(CAM_YAW)) * Math.cos(toRadians(CAM_PITCH))
-	);
+	const camPosVec = vec3.fromValues(ERCamera.x, CAM_Y, ERCamera.z);
+	const camForwardVec = calcForwardVec();
 	mat4.lookAt(
 		view,
 		camPosVec,
@@ -388,7 +383,7 @@ function createProj() {
 	const proj = mat4.create();
 	mat4.perspective(
 		proj,
-		toRadians(70),
+		toRadians(50),
 		ERgl.canvas.clientWidth / ERgl.canvas.clientHeight,
 		0.1,
 		1000.0
@@ -405,11 +400,7 @@ function loadCamera() {
 function loadCamPos() {
 	ERgl.uniform3fv(
 		ERModelShader.uniformLocations.camPos,
-		vec3.fromValues(
-			ERCamera.x,
-			CAM_Y,
-			ERCamera.z
-		)
+		vec3.fromValues(ERCamera.x, CAM_Y, ERCamera.z)
 	);
 }
 
@@ -550,7 +541,7 @@ function createShadowMap() {
 		0,
 		ERgl.DEPTH_COMPONENT,
 		SHADOW_WIDTH,
-		SHADOW_HEIGHT,
+		SHADOW_WIDTH,
 		0,
 		ERgl.DEPTH_COMPONENT,
 		ERgl.UNSIGNED_SHORT,
@@ -571,20 +562,29 @@ function createShadowMap() {
 	);
 	ERgl.bindFramebuffer(ERgl.FRAMEBUFFER, null);
 
-	const matrix = createLightSpaceMatrix();
 	const shader = createShadowMapShader();
 
-	ERShadowMap = { framebuffer, texture, matrix, shader };
+	ERShadowMap = { framebuffer, texture, shader };
 }
 
-function createLightSpaceMatrix() {
+function calcForwardVec() {
+	return vec3.fromValues(
+		Math.sin(toRadians(CAM_YAW)) * Math.cos(toRadians(CAM_PITCH)),
+		Math.sin(toRadians(CAM_PITCH)),
+		Math.cos(toRadians(CAM_YAW)) * Math.cos(toRadians(CAM_PITCH))
+	);
+}
+
+function calcLightSpaceMatrix() {
 	const near = 1;
 	const far = 100;
-	const proj = mat4.ortho(mat4.create(), -50, 50, -50, 50, near, far);
+	const proj = mat4.ortho(mat4.create(), -30, 30, -30, 30, near, far);
+	const camForwardVec = calcForwardVec();
+	const shadowMapPos = vec3.fromValues(ERCamera.x + 5, 20, ERCamera.z - 15);
 	const lightView = mat4.lookAt(
 		mat4.create(),
-		vec3.fromValues(1, 50, 1),
-		vec3.fromValues(0, 0, 0),
+		shadowMapPos,
+		vec3.add(vec3.create(), camForwardVec, vec3.fromValues(ERCamera.x, CAM_Y, ERCamera.z)),
 		vec3.fromValues(0, 1, 0)
 	);
 	const lightSpaceMatrix = mat4.mul(mat4.create(), proj, lightView);
@@ -594,7 +594,7 @@ function createLightSpaceMatrix() {
 function bindShadowMap() {
 	ERgl.bindFramebuffer(ERgl.FRAMEBUFFER, ERShadowMap.framebuffer);
 	ERgl.clear(ERgl.DEPTH_BUFFER_BIT);
-	ERgl.viewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+	ERgl.viewport(0, 0, SHADOW_WIDTH, SHADOW_WIDTH);
 }
 
 function drawToShadowMap() {
@@ -608,7 +608,7 @@ function drawShadows() {
 	ERgl.uniformMatrix4fv(
 		ERShadowMap.shader.uniformLocations.lightSpaceMatrix,
 		false,
-		ERShadowMap.matrix
+		calcLightSpaceMatrix()
 	);
 	for (const obj of ERObjects) {
 		const { position, rotation, scale } = obj;
@@ -684,7 +684,7 @@ function toRadians(r) {
 function initCamera() {
 	ERCamera = {
 		x: 0,
-		z: 0
+		z: 0,
 	};
 }
 
