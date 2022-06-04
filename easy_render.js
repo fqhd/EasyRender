@@ -4,6 +4,9 @@ let ERShadowMap;
 let ERModelShader;
 let ERObjects = [];
 let ERCamera;
+const CAM_PITCH = -50;
+const CAM_YAW = 0;
+const CAM_Y = 10;
 const SHADOW_WIDTH = 1024;
 const SHADOW_HEIGHT = 1024;
 
@@ -363,14 +366,14 @@ function drawObjects() {
 function createView() {
 	const view = mat4.create();
 	const camPosVec = vec3.fromValues(
-		ERCamera.position.x,
-		ERCamera.position.y,
-		ERCamera.position.z
+		ERCamera.x,
+		CAM_Y,
+		ERCamera.z
 	);
 	const camForwardVec = vec3.fromValues(
-		Math.sin(toRadians(ERCamera.yaw)) * Math.cos(toRadians(ERCamera.pitch)),
-		Math.sin(toRadians(ERCamera.pitch)),
-		Math.cos(toRadians(ERCamera.yaw)) * Math.cos(toRadians(ERCamera.pitch))
+		Math.sin(toRadians(CAM_YAW)) * Math.cos(toRadians(CAM_PITCH)),
+		Math.sin(toRadians(CAM_PITCH)),
+		Math.cos(toRadians(CAM_YAW)) * Math.cos(toRadians(CAM_PITCH))
 	);
 	mat4.lookAt(
 		view,
@@ -385,7 +388,7 @@ function createProj() {
 	const proj = mat4.create();
 	mat4.perspective(
 		proj,
-		toRadians(ERCamera.fov),
+		toRadians(70),
 		ERgl.canvas.clientWidth / ERgl.canvas.clientHeight,
 		0.1,
 		1000.0
@@ -403,9 +406,9 @@ function loadCamPos() {
 	ERgl.uniform3fv(
 		ERModelShader.uniformLocations.camPos,
 		vec3.fromValues(
-			ERCamera.position.x,
-			ERCamera.position.y,
-			ERCamera.position.z
+			ERCamera.x,
+			CAM_Y,
+			ERCamera.z
 		)
 	);
 }
@@ -680,14 +683,8 @@ function toRadians(r) {
 
 function initCamera() {
 	ERCamera = {
-		position: {
-			x: 0,
-			y: 0,
-			z: 0,
-		},
-		pitch: 0,
-		yaw: 0,
-		fov: 70,
+		x: 0,
+		z: 0
 	};
 }
 

@@ -47,9 +47,8 @@ async function main() {
 	cube.position.x = 3;
 
 	// Move the camera outside the object
-	ERCamera.position.z = -30;
-	ERCamera.position.y = 20;
-	ERCamera.pitch = -45;
+	ERCamera.z = -30;
+	ERCamera.x = 20;
 	floor.scale.x = 45;
 	floor.scale.z = 45;
 
