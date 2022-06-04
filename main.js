@@ -6,6 +6,8 @@ function getPlane() {
 	return model;
 }
 
+let cube;
+
 async function main() {
 	// Initialize the library
 	ERInit();
@@ -24,19 +26,15 @@ async function main() {
 
 	// Create ERObject
 	const floor = ERCreateObject(plane);
-	const cube = ERCreateObject(model, texture);
+	cube = ERCreateObject(model, texture);
 
 	cube.scale.x = 0.5;
 	cube.scale.y = 0.5;
 	cube.scale.z = 0.5;
 	cube.position.y = 0.5;
-	cube.position.x = 20;
-	cube.position.z = 15;
 
-	ERObjects.push(cube);
-
-	// Add the objects you want to draw to the global ERObjects array
-	ERObjects.push(floor);
+	ERAddObject(cube);
+	ERAddObject(floor);
 
 	// Move the camera outside the object
 	floor.scale.x = 4500;
@@ -47,10 +45,8 @@ async function main() {
 }
 
 function animate() {
-	// ERObjects[0].position.x -= 0.1;
-	ERObjects[0].position.z += 0.1;
-	ERCamera.x = ERObjects[0].position.x;
-	ERCamera.z = ERObjects[0].position.z - 10;
+	cube.position.z += 0.1;
+	// ERSetCamPos(cube.position.x, cube.position.z - 10)
 
 	ERDrawScene();
 	requestAnimationFrame(animate);

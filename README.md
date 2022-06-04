@@ -31,11 +31,11 @@ const indices = [1, 0, 2];
 
 // Create an ERObject from the model
 const model = ERCreateModel(positions, normals, indices);
-const ourObject = ERCreateObject(model, null, [0, 255, 0]); // no texture and a green color
-ourObject.position.z = 10; // pushing the model away from the camera
+const obj = ERCreateObject(model, null, [0, 255, 0]); // no texture and a green color
+obj.position.z = 10; // pushing the model away from the camera
 
 // Add objects to list of objects to draw
-ERObjects.push(ourObject);
+ERAddObject(obj);
 
 // Start the animation
 animate();
@@ -48,18 +48,12 @@ function animate() {
 
 ### Documentation
 
-`ERCamGetPos(): void` returns camera position
+`ERAddObject(object): void` adds an object to the scene(don't call this every frame)
 
-`ERCamSetPos(x, y, z): void` sets camera position
-
-`ERCamLookAt(x, y, z): void` updates the camera's view direction
-
-`ERCamSetFOV(fov): void` updates the camera's field of view(in degrees)
+`ERSetCamPos(x, z): void` sets camera position
 
 `ERLoadModel(url): Promise` loads a model from a url(must be in .obj format). Returns a promise that resolves to an object containing raw mesh data.
 
 `ERCreateModel(positions, normals, indices, textureCoords?, tangents?): Model` Creates a model based on the parameters provided.
 
 `ERLoadTexture(url): Promise` loads a texture from a url(must be .png). Returns a promise that resolves into texture object
-
-`ERCreateTexture(textureData, width, height): Texture` Creates a texture from an array of data.

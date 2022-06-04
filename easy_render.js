@@ -18,6 +18,15 @@ function ERInit() {
 	createShadowMap();
 }
 
+function ERSetCamPos(x, z){
+	ERCamera.x = x;
+	ERCamera.z = z;
+}
+
+function ERAddObject(object){
+	ERObjects.push(object);
+}
+
 function ERCreateObject(model, texture, color) {
 	if (!color) {
 		color = [255, 255, 255];
