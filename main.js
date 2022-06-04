@@ -26,7 +26,7 @@ async function main() {
 
 	// Create ERObject
 	const floor = ERCreateObject(plane, null, [0, 255, 0]);
-	cube = ERCreateObject(model, texture);
+	cube = ERCreateObject(model, null, [255, 0, 0]);
 
 	cube.position.y = 1;
 	cube.position.z = 10;

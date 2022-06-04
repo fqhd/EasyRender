@@ -830,7 +830,6 @@ function createModelShader() {
 		mediump float currentDepth = projCoords.z;
 
 		// check whether current frag pos is in shadow
-		mediump float bias = 0.0001;
 		mediump float shadow = 0.0;
 		mediump float texelSize = 1.0 / 2048.0;
 		for(int x = -3; x <= 3; ++x)
@@ -838,7 +837,7 @@ function createModelShader() {
 			for(int y = -3; y <= 3; ++y)
 			{
 				mediump float pcfDepth = texture2D(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r; 
-				shadow += currentDepth - bias > pcfDepth ? 0.3 : 1.0;        
+				shadow += currentDepth > pcfDepth ? 0.3 : 1.0;        
 			}    
 		}
 		shadow /= 49.0;
