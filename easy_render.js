@@ -7,7 +7,7 @@ let ERCamera;
 const CAM_PITCH = -41;
 const CAM_YAW = 0;
 const CAM_Y = 10;
-const SHADOW_WIDTH = 4096;
+const SHADOW_WIDTH = 2048;
 
 const { mat4, vec3, vec4 } = glMatrix;
 
@@ -587,7 +587,7 @@ function calcForwardVec() {
 function calcLightSpaceMatrix() {
 	const near = 1;
 	const far = 100;
-	const proj = mat4.ortho(mat4.create(), -45, 10, -12, 12, near, far);
+	const proj = mat4.ortho(mat4.create(), -45, 10, -45, 10, near, far);
 	const camForwardVec = calcForwardVec();
 	const shadowMapPos = vec3.fromValues(ERCamera.x + 24, 25, ERCamera.z - 20);
 	const lightView = mat4.lookAt(
@@ -769,7 +769,7 @@ function createModelShader() {
 	attribute vec3 aPosition;
 	attribute vec3 aNormal;
 	attribute vec2 aUV;
-	
+
 	varying vec3 vNormal;
 	varying vec3 vLightDir;
 	varying vec2 vUV;
@@ -829,15 +829,16 @@ function createModelShader() {
 		// check whether current frag pos is in shadow
 		mediump float shadow = 0.0;
 		mediump float texelSize = 1.0 / 2048.0;
-		for(int x = -3; x <= 3; ++x)
+
+		for(int x = -2; x <= 2; ++x)
 		{
-			for(int y = -3; y <= 3; ++y)
+			for(int y = -2; y <= 2; ++y)
 			{
 				mediump float pcfDepth = texture2D(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r; 
 				shadow += currentDepth > pcfDepth ? 0.3 : 1.0;        
 			}    
 		}
-		shadow /= 49.0;
+		shadow /= 25.0;
 
 		return shadow;
 	}
