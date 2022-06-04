@@ -7,6 +7,7 @@ function getPlane() {
 }
 
 let cube;
+let o = {};
 
 async function main() {
 	// Initialize the library
@@ -21,15 +22,19 @@ async function main() {
 	// Create the model object
 	const model = ERCreateModel(positions, normals, indices, textureCoords);
 
-	// Load texture
-	const texture = await ERLoadTexture("./bricks_texture.jpg");
-
 	// Create ERObject
 	const floor = ERCreateObject(plane, null, [0, 255, 0]);
 	cube = ERCreateObject(model, null, [255, 0, 0]);
-
 	cube.position.y = 1;
 	cube.position.z = 10;
+
+	for (let i = 0; i < 2; i++) {
+		const c = ERCreateObject(model, null, [255, 0, 0]);
+		c.position.y = 1;
+		c.position.x = Math.random() * 20;
+		c.position.z = Math.random() * 20;
+		ERAddObject(c);
+	}
 
 	ERAddObject(cube);
 	ERAddObject(floor);
@@ -38,14 +43,44 @@ async function main() {
 	floor.scale.x = 4500;
 	floor.scale.z = 4500;
 
+	document.addEventListener("keydown", keyPressed);
+	document.addEventListener("keyup", keyReleased);
+
 	// Start the render loop
 	animate();
 }
 
-function animate() {
+function update(dt) {
+	if (o["ArrowLeft"]) {
+		cube.position.x += 15 * dt;
+	}
+	if (o["ArrowRight"]) {
+		cube.position.x -= 15 * dt;
+	}
+	if (o["ArrowUp"]) {
+		cube.position.z += 15 * dt;
+	}
+	if (o["ArrowDown"]) {
+		cube.position.z -= 15 * dt;
+	}
+}
+
+function keyReleased(k) {
+	o[k.key] = false;
+}
+
+function keyPressed(k) {
+	o[k.key] = true;
+}
+
+let lastTime = 0;
+function animate(time) {
+	const dt = (time - lastTime) / 1000;
+	lastTime = time;
 	// cube.rotation.x += 1;
 	// cube.rotation.y += 1;
-	// ERSetCamPos(cube.position.x, cube.position.z - 10)
+	update(dt);
+	ERSetCamPos(cube.position.x, cube.position.z - 10)
 
 	ERDrawScene();
 	requestAnimationFrame(animate);

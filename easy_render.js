@@ -587,7 +587,7 @@ function calcForwardVec() {
 function calcLightSpaceMatrix() {
 	const near = 1;
 	const far = 100;
-	const proj = mat4.ortho(mat4.create(), -30, 30, -30, 30, near, far);
+	const proj = mat4.ortho(mat4.create(), -45, 10, -12, 12, near, far);
 	const camForwardVec = calcForwardVec();
 	const shadowMapPos = vec3.fromValues(ERCamera.x + 24, 25, ERCamera.z - 20);
 	const lightView = mat4.lookAt(
@@ -769,7 +769,7 @@ function createModelShader() {
 	attribute vec3 aPosition;
 	attribute vec3 aNormal;
 	attribute vec2 aUV;
-
+	
 	varying vec3 vNormal;
 	varying vec3 vLightDir;
 	varying vec2 vUV;
@@ -822,9 +822,6 @@ function createModelShader() {
 
 		// transform to [0,1] range
 		projCoords = projCoords * 0.5 + 0.5;
-
-		// get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-		mediump float closestDepth = texture2D(shadowMap, projCoords.xy).r;
 
 		// get depth of current fragment from light's perspective
 		mediump float currentDepth = projCoords.z;
