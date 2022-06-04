@@ -7,7 +7,7 @@ let ERCamera;
 const CAM_PITCH = -41;
 const CAM_YAW = 0;
 const CAM_Y = 10;
-const SHADOW_WIDTH = 1024;
+const SHADOW_WIDTH = 4096;
 
 const { mat4, vec3, vec4 } = glMatrix;
 
@@ -18,12 +18,12 @@ function ERInit() {
 	createShadowMap();
 }
 
-function ERSetCamPos(x, z){
+function ERSetCamPos(x, z) {
 	ERCamera.x = x;
 	ERCamera.z = z;
 }
 
-function ERAddObject(object){
+function ERAddObject(object) {
 	ERObjects.push(object);
 }
 
@@ -593,7 +593,11 @@ function calcLightSpaceMatrix() {
 	const lightView = mat4.lookAt(
 		mat4.create(),
 		shadowMapPos,
-		vec3.add(vec3.create(), camForwardVec, vec3.fromValues(ERCamera.x, CAM_Y, ERCamera.z)),
+		vec3.add(
+			vec3.create(),
+			camForwardVec,
+			vec3.fromValues(ERCamera.x, CAM_Y, ERCamera.z)
+		),
 		vec3.fromValues(0, 1, 0)
 	);
 	const lightSpaceMatrix = mat4.mul(mat4.create(), proj, lightView);
@@ -604,6 +608,7 @@ function bindShadowMap() {
 	ERgl.bindFramebuffer(ERgl.FRAMEBUFFER, ERShadowMap.framebuffer);
 	ERgl.clear(ERgl.DEPTH_BUFFER_BIT);
 	ERgl.viewport(0, 0, SHADOW_WIDTH, SHADOW_WIDTH);
+	ERgl.cullFace(ERgl.FRONT);
 }
 
 function drawToShadowMap() {
@@ -656,6 +661,7 @@ function unbindShadowMap() {
 	ERgl.bindFramebuffer(ERgl.FRAMEBUFFER, null);
 	ERgl.clear(ERgl.DEPTH_BUFFER_BIT | ERgl.COLOR_BUFFER_BIT);
 	ERgl.viewport(0, 0, ERgl.canvas.clientWidth, ERgl.canvas.clientHeight);
+	ERgl.cullFace(ERgl.BACK);
 }
 
 function createShaderProgram(vSource, fSource) {
@@ -810,7 +816,7 @@ function createModelShader() {
 	const mediump float shininess = 2.0;
 	const mediump float reflectivity = 0.3;
 
-	mediump float ShadowCalculation(mediump vec4 fragPosLightSpace){
+	mediump float ShadowCalculation(mediump vec4 fragPosLightSpace, mediump vec3 n, mediump vec3 l){
 		// perform perspective divide
 		mediump vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
 
@@ -824,7 +830,18 @@ function createModelShader() {
 		mediump float currentDepth = projCoords.z;
 
 		// check whether current frag pos is in shadow
-		mediump float shadow = currentDepth > closestDepth ? 0.0 : 1.0;
+		mediump float bias = 0.0001;
+		mediump float shadow = 0.0;
+		mediump float texelSize = 1.0 / 2048.0;
+		for(int x = -3; x <= 3; ++x)
+		{
+			for(int y = -3; y <= 3; ++y)
+			{
+				mediump float pcfDepth = texture2D(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r; 
+				shadow += currentDepth - bias > pcfDepth ? 0.1 : 1.0;        
+			}    
+		}
+		shadow /= 49.0;
 
 		return shadow;
 	}
@@ -855,7 +872,7 @@ function createModelShader() {
 		mediump vec3 finalSpec = vec3(1.0) * reflectivity * specFactor;
 
 		// Shadow
-		mediump float shadow = ShadowCalculation(vFragPosLightSpace);
+		mediump float shadow = ShadowCalculation(vFragPosLightSpace, unitNormal, unitLightDir);
 
 		gl_FragColor = vec4(fragColor * shadow + finalSpec * shadow, 1.0);
 	}`;

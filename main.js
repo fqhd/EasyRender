@@ -25,13 +25,11 @@ async function main() {
 	const texture = await ERLoadTexture("./bricks_texture.jpg");
 
 	// Create ERObject
-	const floor = ERCreateObject(plane);
+	const floor = ERCreateObject(plane, null, [0, 255, 0]);
 	cube = ERCreateObject(model, texture);
 
-	cube.scale.x = 0.5;
-	cube.scale.y = 0.5;
-	cube.scale.z = 0.5;
-	cube.position.y = 0.5;
+	cube.position.y = 1;
+	cube.position.z = 10;
 
 	ERAddObject(cube);
 	ERAddObject(floor);
@@ -45,7 +43,7 @@ async function main() {
 }
 
 function animate() {
-	cube.position.z += 0.1;
+	// cube.position.z += 0.1;
 	// ERSetCamPos(cube.position.x, cube.position.z - 10)
 
 	ERDrawScene();
