@@ -6,7 +6,7 @@ let ERCamera;
 const CAM_PITCH = -41;
 const CAM_YAW = 0;
 const CAM_Y = 10;
-const SHADOW_WIDTH = 2048;
+const SHADOW_WIDTH = 4096;
 
 const { mat4, vec3, vec4 } = glMatrix;
 
@@ -413,6 +413,7 @@ function drawObjects() {
 	ERgl.useProgram(ERModelShader.program);
 	ERgl.activeTexture(ERgl.TEXTURE1);
 	ERgl.bindTexture(ERgl.TEXTURE_2D, ERShadowMap.texture);
+	ERgl.uniform3fv(ERModelShader.uniformLocations.shadowMapPos, ERShadowMap.pos);
 	ERgl.uniformMatrix4fv(
 		ERModelShader.uniformLocations.lightSpaceMatrix,
 		false,
@@ -697,6 +698,7 @@ function calcLightSpaceMatrix() {
 	const proj = mat4.ortho(mat4.create(), -45, 10, -45, 10, near, far);
 	const camForwardVec = calcForwardVec();
 	const shadowMapPos = vec3.fromValues(ERCamera.x + 24, 25, ERCamera.z - 20);
+	ERShadowMap.pos = shadowMapPos;
 	const lightView = mat4.lookAt(
 		mat4.create(),
 		shadowMapPos,
@@ -924,9 +926,11 @@ function createModelShader() {
 	uniform sampler2D shadowMap;
 	uniform int vColored;
 	uniform int textured;
+	uniform mediump vec3 shadowMapPos;
 
 	const mediump float shininess = 2.0;
 	const mediump float reflectivity = 0.3;
+	const mediump float shadowFactor = 0.3;
 
 	mediump float ShadowCalculation(mediump vec4 fragPosLightSpace, mediump vec3 n, mediump vec3 l){
 		// perform perspective divide
@@ -940,14 +944,17 @@ function createModelShader() {
 
 		// check whether current frag pos is in shadow
 		mediump float shadow = 0.0;
-		mediump float texelSize = 1.0 / 2048.0;
+		mediump float texelSize = 1.0 / 4096.0;
+		if(dot(n, -l) < 0.0){
+			return shadowFactor;
+		}
 
 		for(int x = -2; x <= 2; ++x)
 		{
 			for(int y = -2; y <= 2; ++y)
 			{
 				mediump float pcfDepth = texture2D(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r; 
-				shadow += currentDepth > pcfDepth ? 0.3 : 1.0;        
+				shadow += currentDepth > pcfDepth ? shadowFactor : 1.0;        
 			}    
 		}
 		shadow /= 25.0;
@@ -983,7 +990,8 @@ function createModelShader() {
 		mediump vec3 finalSpec = vec3(1.0) * reflectivity * specFactor;
 
 		// Shadow
-		mediump float shadow = ShadowCalculation(vFragPosLightSpace, unitNormal, unitLightDir);
+		mediump vec3 shadowDir = normalize(vFragPos - shadowMapPos);
+		mediump float shadow = ShadowCalculation(vFragPosLightSpace, unitNormal, shadowDir);
 
 		gl_FragColor = vec4(fragColor * shadow + finalSpec * shadow, 1.0);
 	}`;
@@ -1005,6 +1013,7 @@ function createModelShader() {
 			vColored: ERgl.getUniformLocation(program, "vColored"),
 			textured: ERgl.getUniformLocation(program, "textured"),
 			camPos: ERgl.getUniformLocation(program, "camPos"),
+			shadowMapPos: ERgl.getUniformLocation(program, "shadowMapPos"),
 			uTexture: ERgl.getUniformLocation(program, "uTexture"),
 			shadowMap: ERgl.getUniformLocation(program, "shadowMap"),
 			lightSpaceMatrix: ERgl.getUniformLocation(program, "lightSpaceMatrix"),

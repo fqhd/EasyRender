@@ -29,12 +29,12 @@ async function main() {
 	cube.position.y = 1;
 	cube.position.z = 10;
 
-	for (let i = 0; i < 2; i++) {
+	for (let i = 0; i < 10; i++) {
 		const c = ERCreateObject(model, null, [255, 0, 0]);
 		c.position.y = 1;
-		c.position.x = Math.random() * 20;
-		c.position.z = Math.random() * 20;
-		// ERAddObject(c);
+		c.position.x = Math.random() * 60 - 30;
+		c.position.z = Math.random() * 60 - 30;
+		ERAddObject(c);
 	}
 
 	ERAddObject(cube);
