@@ -24,36 +24,41 @@ Here is a small example to get you started using the library.
 // Initialize the library
 ERInit();
 
-// Define the positions, normals, and textureCoords of your model (These will generally be loaded from a file)
+// Define the positions, normals, and textureCoords of your model (These will generally be loaded from a file with ERLoadModel())
 const positions = [-1, -1, 0, 0, 1, 0, 1, -1, 0];
 const normals = [0, 0, 1, 0, 0, 1, 0, 0, 1];
 const indices = [1, 0, 2];
 
-// Create an ERObject from the model
+// Create an ERModel
 const model = ERCreateModel(positions, normals, indices);
+
+// Create an ERObject
 const obj = ERCreateObject(model, null, [0, 255, 0]); // no texture and a green color
-obj.position.z = 10; // pushing the model away from the camera
+
+// Move the object infront of the camera so you can seen it
+obj.position.z = 10;
 
 // Add objects to list of objects to draw
 ERAddObject(obj);
 
-// Start the animation
-animate();
+// Start the animation and send your callback function
+ERBeginAnimationLoop(update);
 
-function animate() {
-	ERDrawScene();
-	requestAnimationFrame(animate);
+function update(deltaTime) {
+	// This function will be called every frame
 }
 ```
 
 ### Documentation
 
-`ERAddObject(object): void` adds an object to the scene(don't call this every frame)
+`ERAddObject(object): void` Adds an object to the scene(don't call this every frame)
 
-`ERSetCamPos(x, z): void` sets camera position
+`ERSetCamPos(x, z): void` Sets camera position
 
-`ERLoadModel(url): Promise` loads a model from a url(must be in .obj format). Returns a promise that resolves to an object containing raw mesh data.
+`ERLoadModel(url): Promise` Loads a model from a url(must be in .obj format). Returns a promise that resolves to an object containing raw mesh data.
 
 `ERCreateModel(positions, normals, indices, textureCoords?, tangents?): Model` Creates a model based on the parameters provided.
 
-`ERLoadTexture(url): Promise` loads a texture from a url(must be .png). Returns a promise that resolves into texture object
+`ERLoadTexture(url): Promise` Loads a texture from a url(must be .png). Returns a promise that resolves into texture object
+
+`ERBeginAnimationLoop(callback): void` Asynchronously starts the rendering loop and calls the callback you passed in every frame and passes in the deltaTime(in seconds) as a parameter to the callback.
