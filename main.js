@@ -29,11 +29,11 @@ async function main() {
 	cube.position.y = 1;
 	cube.position.z = 10;
 
-	for (let i = 0; i < 10; i++) {
+	for (let i = 0; i < 1000; i++) {
 		const c = ERCreateObject(model, null, [255, 0, 0]);
 		c.position.y = 1;
-		c.position.x = Math.random() * 60 - 30;
-		c.position.z = Math.random() * 60 - 30;
+		c.position.x = Math.random() * 1000 - 500;
+		c.position.z = Math.random() * 1000 - 500;
 		ERAddObject(c);
 	}
 
@@ -41,8 +41,8 @@ async function main() {
 	ERAddObject(floor);
 
 	// Move the camera outside the object
-	floor.scale.x = 30;
-	floor.scale.z = 30;
+	floor.scale.x = 1000;
+	floor.scale.z = 1000;
 
 	document.addEventListener("keydown", keyPressed);
 	document.addEventListener("keyup", keyReleased);
@@ -53,16 +53,16 @@ async function main() {
 
 function update(dt) {
 	if (o["ArrowLeft"]) {
-		cube.position.x += 15 * dt;
+		cube.position.x += 45 * dt;
 	}
 	if (o["ArrowRight"]) {
-		cube.position.x -= 15 * dt;
+		cube.position.x -= 45 * dt;
 	}
 	if (o["ArrowUp"]) {
-		cube.position.z += 15 * dt;
+		cube.position.z += 45 * dt;
 	}
 	if (o["ArrowDown"]) {
-		cube.position.z -= 15 * dt;
+		cube.position.z -= 45 * dt;
 	}
 }
 
