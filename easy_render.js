@@ -695,7 +695,7 @@ function calcForwardVec() {
 function calcLightSpaceMatrix() {
 	const near = 1;
 	const far = 100;
-	const proj = mat4.ortho(mat4.create(), -45, 10, -45, 10, near, far);
+	const proj = mat4.ortho(mat4.create(), -45, 15, -45, 15, near, far);
 	const camForwardVec = calcForwardVec();
 	const shadowMapPos = vec3.fromValues(ERCamera.x + 27, 30, ERCamera.z - 25);
 	ERShadowMap.pos = shadowMapPos;
