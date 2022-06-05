@@ -400,7 +400,7 @@ async function loadModelData(url) {
 	};
 }
 
-function ERDrawScene() {
+function drawScene() {
 	drawToShadowMap();
 	drawObjects();
 }
@@ -682,6 +682,21 @@ function createShadowMap() {
 	const shader = createShadowMapShader();
 
 	ERShadowMap = { framebuffer, texture, shader };
+}
+
+let ERCallback;
+function ERBeginAnimationLoop(callback){
+	ERCallback = callback;
+	requestAnimationFrame(animate);
+}
+
+let lastTime = 0;
+function animate(time) {
+	const dt = (time - lastTime) / 1000;
+	lastTime = time;
+	ERCallback(dt);
+	drawScene();
+	requestAnimationFrame(animate);
 }
 
 function calcForwardVec() {

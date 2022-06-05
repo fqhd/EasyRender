@@ -29,26 +29,24 @@ async function main() {
 	cube.position.y = 1;
 	cube.position.z = 10;
 
-	for (let i = 0; i < 1000; i++) {
+	for (let i = 0; i < 20; i++) {
 		const c = ERCreateObject(model, null, [255, 0, 0]);
 		c.position.y = 1;
-		c.position.x = Math.random() * 1000 - 500;
-		c.position.z = Math.random() * 1000 - 500;
+		c.position.x = Math.random() * 100 - 50;
+		c.position.z = Math.random() * 100 - 50;
 		ERAddObject(c);
 	}
 
 	ERAddObject(cube);
 	ERAddObject(floor);
 
-	// Move the camera outside the object
-	floor.scale.x = 1000;
-	floor.scale.z = 1000;
+	floor.scale.x = 100;
+	floor.scale.z = 100;
 
 	document.addEventListener("keydown", keyPressed);
 	document.addEventListener("keyup", keyReleased);
 
-	// Start the render loop
-	animate();
+	ERBeginAnimationLoop(update);
 }
 
 function update(dt) {
@@ -64,6 +62,10 @@ function update(dt) {
 	if (o["ArrowDown"]) {
 		cube.position.z -= 45 * dt;
 	}
+	ERSetCamPos(cube.position.x, cube.position.z - 10);
+	cube.scale.x = (cube.position.z + 50) / 100;
+	cube.scale.y = (cube.position.z + 50) / 100;
+	cube.scale.z = (cube.position.z + 50) / 100;
 }
 
 function keyReleased(k) {
@@ -72,19 +74,6 @@ function keyReleased(k) {
 
 function keyPressed(k) {
 	o[k.key] = true;
-}
-
-let lastTime = 0;
-function animate(time) {
-	const dt = (time - lastTime) / 1000;
-	lastTime = time;
-	// cube.rotation.x += 1;
-	// cube.rotation.y += 1;
-	update(dt);
-	ERSetCamPos(cube.position.x, cube.position.z - 10)
-
-	ERDrawScene();
-	requestAnimationFrame(animate);
 }
 
 main();
