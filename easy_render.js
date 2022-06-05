@@ -1,4 +1,3 @@
-"use strict";
 let ERgl;
 let ERShadowMap;
 let ERModelShader;
@@ -166,15 +165,65 @@ function createTexturedModel(positions, normals, indices, textureCoords) {
 	};
 }
 
-function ERCreateModel(positions, normals, indices, textureCoords) {
-	if (positions && normals && indices && textureCoords) {
+function ERCreateModel(positions, normals, indices, textureCoords, colors) {
+	if (positions && normals && indices && textureCoords && !colors) {
 		return createTexturedModel(positions, normals, indices, textureCoords);
-	} else if (positions && normals && indices) {
+	} else if (positions && normals && indices && !textureCoords && !colors) {
 		return createRawModel(positions, normals, indices);
+	} else if (positions && normals && indices && !textureCoords && colors) {
+		return createColoredModel(positions, normals, indices, colors);	
 	} else {
 		console.error("EasyRender: incorrect model parameters");
 		return null;
 	}
+}
+
+function createColoredModel(positions, normals, indices, colors){
+	checkIndices(indices);
+	const posBuff = ERgl.createBuffer();
+	const normBuff = ERgl.createBuffer();
+	const indexBuff = ERgl.createBuffer();
+	const colBuff = ERgl.createBuffer();
+
+	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, posBuff);
+	ERgl.bufferData(
+		ERgl.ARRAY_BUFFER,
+		new Float32Array(positions),
+		ERgl.STATIC_DRAW
+	);
+
+	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, normBuff);
+	ERgl.bufferData(
+		ERgl.ARRAY_BUFFER,
+		new Float32Array(normals),
+		ERgl.STATIC_DRAW
+	);
+
+	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, colBuff);
+	ERgl.bufferData(
+		ERgl.ARRAY_BUFFER,
+		new Float32Array(colors),
+		ERgl.STATIC_DRAW
+	);
+
+	ERgl.bindBuffer(ERgl.ELEMENT_ARRAY_BUFFER, indexBuff);
+	ERgl.bufferData(
+		ERgl.ELEMENT_ARRAY_BUFFER,
+		new Uint16Array(indices),
+		ERgl.STATIC_DRAW
+	);
+
+	const numPositions = indices.length;
+
+	return {
+		buffers: {
+			posBuff,
+			normBuff,
+			indexBuff,
+			colBuff
+		},
+		numPositions,
+	};
 }
 
 function isPowerOf2(value) {
@@ -423,6 +472,7 @@ function loadColor(color) {
 function drawRaw(object) {
 	loadColor(object.color);
 	ERgl.uniform1i(ERModelShader.uniformLocations.textured, 0);
+	ERgl.uniform1i(ERModelShader.uniformLocations.vColored, 0);
 
 	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, object.model.buffers.posBuff);
 	ERgl.vertexAttribPointer(
@@ -460,6 +510,7 @@ function drawTextured(object) {
 	ERgl.activeTexture(ERgl.TEXTURE0);
 	ERgl.bindTexture(ERgl.TEXTURE_2D, object.texture);
 	ERgl.uniform1i(ERModelShader.uniformLocations.textured, 1);
+	ERgl.uniform1i(ERModelShader.uniformLocations.vColored, 0);
 
 	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, object.model.buffers.posBuff);
 	ERgl.vertexAttribPointer(
@@ -521,9 +572,65 @@ function drawObject(object) {
 
 	if (object.texture) {
 		drawTextured(object);
-	} else {
+	} else if(object.model.buffers.colBuff){
+		drawColored(object);
+	}else{
 		drawRaw(object);
 	}
+}
+
+function drawColored(object){
+	ERgl.uniform1i(ERModelShader.uniformLocations.textured, 0);
+	ERgl.uniform1i(ERModelShader.uniformLocations.vColored, 1);
+
+
+	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, object.model.buffers.posBuff);
+	ERgl.vertexAttribPointer(
+		ERModelShader.attribLocations.aPosition,
+		3,
+		ERgl.FLOAT,
+		false,
+		0,
+		0
+	);
+	ERgl.enableVertexAttribArray(ERModelShader.attribLocations.aPosition);
+
+
+
+	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, object.model.buffers.normBuff);
+	ERgl.vertexAttribPointer(
+		ERModelShader.attribLocations.aNormal,
+		3,
+		ERgl.FLOAT,
+		false,
+		0,
+		0
+	);
+	ERgl.enableVertexAttribArray(ERModelShader.attribLocations.aNormal);
+
+
+
+	ERgl.bindBuffer(ERgl.ARRAY_BUFFER, object.model.buffers.colBuff);
+	ERgl.vertexAttribPointer(
+		ERModelShader.attribLocations.aColor,
+		3,
+		ERgl.FLOAT,
+		false,
+		0,
+		0
+	);
+	ERgl.enableVertexAttribArray(ERModelShader.attribLocations.aColor);
+
+	ERgl.bindBuffer(ERgl.ELEMENT_ARRAY_BUFFER, object.model.buffers.indexBuff);
+
+	ERgl.drawElements(
+		ERgl.TRIANGLES,
+		object.model.numPositions,
+		ERgl.UNSIGNED_SHORT,
+		0
+	);
+
+	ERgl.disableVertexAttribArray(ERModelShader.attribLocations.aColor);
 }
 
 function initWebGL() {
@@ -769,6 +876,7 @@ function createModelShader() {
 	attribute vec3 aPosition;
 	attribute vec3 aNormal;
 	attribute vec2 aUV;
+	attribute vec3 aColor;
 
 	varying vec3 vNormal;
 	varying vec3 vLightDir;
@@ -776,6 +884,7 @@ function createModelShader() {
 	varying vec3 vToCamVec;
 	varying vec3 vFragPos;
 	varying vec4 vFragPosLightSpace;
+	varying vec3 vColor;
 
 	uniform mat4 projection;
 	uniform mat4 view;
@@ -796,6 +905,7 @@ function createModelShader() {
 		vNormal = (model * vec4(aNormal, 0.0)).xyz;
 		
 		vToCamVec = camPos - worldPos.xyz;
+		vColor = aColor;
 
 		vLightDir = lightDir;
 		vToCamVec = camPos - worldPos.xyz;
@@ -807,10 +917,12 @@ function createModelShader() {
 	varying mediump vec3 vLightDir;
 	varying mediump vec3 vFragPos;
 	varying mediump vec4 vFragPosLightSpace;
+	varying mediump vec3 vColor;
 
 	uniform mediump vec3 objColor;
 	uniform sampler2D uTexture;
 	uniform sampler2D shadowMap;
+	uniform int vColored;
 	uniform int textured;
 
 	const mediump float shininess = 2.0;
@@ -847,6 +959,8 @@ function createModelShader() {
 		mediump vec3 fragColor;
 		if(textured == 1){
 			fragColor = texture2D(uTexture, vUV).rgb;
+		}else if(vColored == 1){
+			fragColor = vColor;
 		}else{
 			fragColor = objColor;
 		}
@@ -881,12 +995,14 @@ function createModelShader() {
 			aPosition: ERgl.getAttribLocation(program, "aPosition"),
 			aNormal: ERgl.getAttribLocation(program, "aNormal"),
 			aUV: ERgl.getAttribLocation(program, "aUV"),
+			aColor: ERgl.getAttribLocation(program, "aColor"),
 		},
 		uniformLocations: {
 			projection: ERgl.getUniformLocation(program, "projection"),
 			view: ERgl.getUniformLocation(program, "view"),
 			model: ERgl.getUniformLocation(program, "model"),
 			color: ERgl.getUniformLocation(program, "objColor"),
+			vColored: ERgl.getUniformLocation(program, "vColored"),
 			textured: ERgl.getUniformLocation(program, "textured"),
 			camPos: ERgl.getUniformLocation(program, "camPos"),
 			uTexture: ERgl.getUniformLocation(program, "uTexture"),

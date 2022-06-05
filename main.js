@@ -2,7 +2,8 @@ function getPlane() {
 	const positions = [-1, 0, -1, -1, 0, 1, 1, 0, 1, 1, 0, -1];
 	const indices = [0, 1, 2, 0, 2, 3];
 	const normals = [0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0];
-	const model = ERCreateModel(positions, normals, indices);
+	const colors = [1, 0.5, 0, 1, 0, 0, 1, 0, 0, 1, 0.5, 0];
+	const model = ERCreateModel(positions, normals, indices, null, colors);
 	return model;
 }
 
@@ -14,13 +15,13 @@ async function main() {
 	ERInit();
 
 	// Load the model data
-	const { positions, normals, indices, textureCoords } = await ERLoadModel(
+	const { positions, normals, indices } = await ERLoadModel(
 		"./model.obj"
 	);
 	const plane = getPlane();
 
 	// Create the model object
-	const model = ERCreateModel(positions, normals, indices, textureCoords);
+	const model = ERCreateModel(positions, normals, indices);
 
 	// Create ERObject
 	const floor = ERCreateObject(plane, null, [0, 255, 0]);
@@ -33,15 +34,15 @@ async function main() {
 		c.position.y = 1;
 		c.position.x = Math.random() * 20;
 		c.position.z = Math.random() * 20;
-		ERAddObject(c);
+		// ERAddObject(c);
 	}
 
 	ERAddObject(cube);
 	ERAddObject(floor);
 
 	// Move the camera outside the object
-	floor.scale.x = 4500;
-	floor.scale.z = 4500;
+	floor.scale.x = 30;
+	floor.scale.z = 30;
 
 	document.addEventListener("keydown", keyPressed);
 	document.addEventListener("keyup", keyReleased);
