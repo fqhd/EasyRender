@@ -8,25 +8,25 @@ const CAM_YAW = 0;
 const CAM_Y = 10;
 const SHADOW_WIDTH = 4096;
 
-const { mat4, vec3, vec4 } = glMatrix;
+import { vec3, mat4 } from "gl-matrix";
 
-function ERInit() {
+export function ERInit() {
 	initWebGL();
 	initCamera();
 	createModelShader();
 	createShadowMap();
 }
 
-function ERSetCamPos(x, z) {
+export function ERSetCamPos(x, z) {
 	ERCamera.x = x;
 	ERCamera.z = z;
 }
 
-function ERAddObject(object) {
+export function ERAddObject(object) {
 	ERObjects.push(object);
 }
 
-function ERCreateObject(model, texture, color) {
+export function ERCreateObject(model, texture, color) {
 	if (!color) {
 		color = [255, 255, 255];
 	}
@@ -165,7 +165,7 @@ function createTexturedModel(positions, normals, indices, textureCoords) {
 	};
 }
 
-function ERCreateModel(positions, normals, indices, textureCoords, colors) {
+export function ERCreateModel(positions, normals, indices, textureCoords, colors) {
 	if (positions && normals && indices && textureCoords && !colors) {
 		return createTexturedModel(positions, normals, indices, textureCoords);
 	} else if (positions && normals && indices && !textureCoords && !colors) {
@@ -230,7 +230,7 @@ function isPowerOf2(value) {
 	return (value & (value - 1)) == 0;
 }
 
-async function ERLoadTexture(url) {
+export async function ERLoadTexture(url) {
 	return new Promise((resolve, reject) => {
 		const image = new Image();
 		image.src = url;
@@ -272,7 +272,7 @@ async function ERLoadTexture(url) {
 	});
 }
 
-async function ERLoadModel(url) {
+export async function ERLoadModel(url) {
 	const data = await loadModelData(url);
 	optimizeModel(data);
 	return data;
@@ -405,7 +405,7 @@ function drawScene() {
 	drawObjects();
 }
 
-function ERInitScene(objects) {
+export function ERInitScene(objects) {
 	ERObjects = objects;
 }
 
@@ -685,7 +685,7 @@ function createShadowMap() {
 }
 
 let ERCallback;
-function ERBeginAnimationLoop(callback){
+export function ERBeginAnimationLoop(callback){
 	ERCallback = callback;
 	requestAnimationFrame(animate);
 }
