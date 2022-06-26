@@ -1,0 +1,219 @@
+import { RawData, ModelData, ERModel } from "./types";
+
+class OBJLoader {
+	private _cache: Map<string, ERModel>;
+
+	constructor(private _gl: WebGLRenderingContext) {}
+	
+	public async getModel(url: URL){
+		const query = this._cache.get(url.toString());
+		if(!query){
+			const model = await this.loadModel(url);
+			this._cache.set(url.toString(), model);
+			return model;
+		}
+	}
+
+	private async loadModel(url: URL) {
+		const data = await this.loadModelData(url);
+		const optimizedData = this.optimizeModel(data);
+		const { positions, normals, textureCoords, indices } = optimizedData;
+		const model = this.createModel(positions, normals, textureCoords, indices);
+		return model;
+	}
+
+	private async loadModelData(url: URL): Promise<RawData> {
+		const response = await fetch(url);
+		const text = await response.text();
+		const lines = text.split("\n");
+		const positions_lookup = new Array();
+		const normals_lookup = new Array();
+		const uvs_lookup = new Array();
+		for (let i = 0; i < lines.length; i++) {
+			let tokens = lines[i].split(" ");
+			switch (tokens[0]) {
+				case "v":
+					positions_lookup.push(parseFloat(tokens[1]));
+					positions_lookup.push(parseFloat(tokens[2]));
+					positions_lookup.push(parseFloat(tokens[3]));
+					break;
+				case "vn":
+					normals_lookup.push(parseFloat(tokens[1]));
+					normals_lookup.push(parseFloat(tokens[2]));
+					normals_lookup.push(parseFloat(tokens[3]));
+					break;
+				case "vt":
+					uvs_lookup.push(parseFloat(tokens[1]));
+					uvs_lookup.push(parseFloat(tokens[2]));
+					break;
+			}
+		}
+
+		const positions = new Array();
+		const normals = new Array();
+		const textureCoords = new Array();
+
+		for (let i = 0; i < lines.length; i++) {
+			let tokens = lines[i].split(" ");
+			if (tokens[0] == "f") {
+				for (let j = 1; j < 4; j++) {
+					const curr_token_indices = tokens[j]
+						.split("/")
+						.map((t) => parseInt(t));
+
+					const pos_index = curr_token_indices[0] - 1;
+					positions.push(positions_lookup[pos_index * 3]);
+					positions.push(positions_lookup[pos_index * 3 + 1]);
+					positions.push(positions_lookup[pos_index * 3 + 2]);
+
+					const uv_index = curr_token_indices[1] - 1;
+					textureCoords.push(uvs_lookup[uv_index * 2]);
+					textureCoords.push(uvs_lookup[uv_index * 2 + 1]);
+
+					const normal_index = curr_token_indices[2] - 1;
+					normals.push(normals_lookup[normal_index * 3]);
+					normals.push(normals_lookup[normal_index * 3 + 1]);
+					normals.push(normals_lookup[normal_index * 3 + 2]);
+				}
+			}
+		}
+		
+		return {
+			positions,
+			normals,
+			textureCoords,
+		};
+	}
+
+	private removeVertex(data: RawData, i: number) {
+		data.positions.splice(i * 3, 3);
+		data.textureCoords.splice(i * 2, 2);
+		data.normals.splice(i * 3, 3);
+	}
+
+	private optimizeModel(data: RawData): ModelData {
+		const indices = new Array();
+		for (let i = 0; i < data.positions.length / 3; i++) {
+			const v = this.isVertexProcessed(data, i);
+			if (v.processed) {
+				indices.push(v.i);
+				this.removeVertex(data, i);
+				i--; // This is important please don't remove it
+			} else {
+				indices.push(i);
+			}
+		}
+		return {
+			positions: data.positions,
+			normals: data.normals,
+			textureCoords: data.textureCoords,
+			indices
+		};
+	}
+
+	private getVertex(data: RawData, index: number) {
+		return [
+			data.positions[index * 3],
+			data.positions[index * 3 + 1],
+			data.positions[index * 3 + 2],
+			data.normals[index * 3],
+			data.normals[index * 3 + 1],
+			data.normals[index * 3 + 2],
+			data.textureCoords[index * 2],
+			data.textureCoords[index * 2 + 1],
+		];
+	}
+
+	private isVertexProcessed(data: RawData, index: number) {
+		const v1 = this.getVertex(data, index);
+		for (let i = 0; i < index; i++) {
+			const v2 = this.getVertex(data, i);
+			if (this.areVerticesIdentical(v1, v2)) {
+				return {
+					processed: true,
+					i,
+				};
+			}
+		}
+		return {
+			processed: false,
+			i: null,
+		};
+	}
+
+	private areVerticesIdentical(v1: number[], v2: number[]) {
+		for (let i = 0; i < v1.length; i++) {
+			if (v1[i] != v2[i]) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	public createModel(
+		positions: number[],
+		normals: number[],
+		indices: number[],
+		textureCoords: number[]
+	) {
+		this.checkIndices(indices);
+		const posBuff = this._gl.createBuffer();
+		const normBuff = this._gl.createBuffer();
+		const uvBuff = this._gl.createBuffer();
+		const indexBuff = this._gl.createBuffer();
+
+		this._gl.bindBuffer(this._gl.ARRAY_BUFFER, posBuff);
+		this._gl.bufferData(
+			this._gl.ARRAY_BUFFER,
+			new Float32Array(positions),
+			this._gl.STATIC_DRAW
+		);
+
+		this._gl.bindBuffer(this._gl.ARRAY_BUFFER, normBuff);
+		this._gl.bufferData(
+			this._gl.ARRAY_BUFFER,
+			new Float32Array(normals),
+			this._gl.STATIC_DRAW
+		);
+
+		this._gl.bindBuffer(this._gl.ARRAY_BUFFER, uvBuff);
+		this._gl.bufferData(
+			this._gl.ARRAY_BUFFER,
+			new Float32Array(textureCoords),
+			this._gl.STATIC_DRAW
+		);
+
+		this._gl.bindBuffer(this._gl.ELEMENT_ARRAY_BUFFER, indexBuff);
+		this._gl.bufferData(
+			this._gl.ELEMENT_ARRAY_BUFFER,
+			new Uint16Array(indices),
+			this._gl.STATIC_DRAW
+		);
+
+		const numPositions = indices.length;
+
+		return {
+			buffers: {
+				posBuff,
+				normBuff,
+				uvBuff,
+				indexBuff,
+			},
+			numPositions,
+		};
+	}
+
+	private checkIndices(indices: number[]) {
+		const max = Math.pow(2, 16);
+		for (const i of indices) {
+			if (i >= max) {
+				console.error(
+					"EasyRender: invalid model indices. All indices values must be under 65536"
+				);
+				return;
+			}
+		}
+	}
+}
+
+export default OBJLoader;
