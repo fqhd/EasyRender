@@ -1,6 +1,6 @@
 {
   "name": "@fahd31256/easy-render",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A 3D rendering library for the web. Made to visualize something quickly (not very customizable)",
   "main": "index.js",
   "scripts": {
