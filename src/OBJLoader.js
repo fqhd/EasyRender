@@ -1,20 +1,19 @@
-import { RawData, ModelData, ERModel } from "./types";
-
 class OBJLoader {
-	private _cache: Map<string, ERModel>;
+	constructor(gl) {
+		this.cache = new Map();
+		this.gl = gl;
+	}
 
-	constructor(private _gl: WebGLRenderingContext) {}
-	
-	public async getModel(url: URL){
-		const query = this._cache.get(url.toString());
-		if(!query){
+	async getModel(url) {
+		const query = this.cache.get(url.toString());
+		if (!query) {
 			const model = await this.loadModel(url);
-			this._cache.set(url.toString(), model);
+			this.cache.set(url.toString(), model);
 			return model;
 		}
 	}
 
-	private async loadModel(url: URL) {
+	async loadModel(url) {
 		const data = await this.loadModelData(url);
 		const optimizedData = this.optimizeModel(data);
 		const { positions, normals, textureCoords, indices } = optimizedData;
@@ -22,7 +21,7 @@ class OBJLoader {
 		return model;
 	}
 
-	private async loadModelData(url: URL): Promise<RawData> {
+	async loadModelData(url) {
 		const response = await fetch(url);
 		const text = await response.text();
 		const lines = text.split("\n");
@@ -77,7 +76,7 @@ class OBJLoader {
 				}
 			}
 		}
-		
+
 		return {
 			positions,
 			normals,
@@ -85,13 +84,13 @@ class OBJLoader {
 		};
 	}
 
-	private removeVertex(data: RawData, i: number) {
+	removeVertex(data, i) {
 		data.positions.splice(i * 3, 3);
 		data.textureCoords.splice(i * 2, 2);
 		data.normals.splice(i * 3, 3);
 	}
 
-	private optimizeModel(data: RawData): ModelData {
+	optimizeModel(data) {
 		const indices = new Array();
 		for (let i = 0; i < data.positions.length / 3; i++) {
 			const v = this.isVertexProcessed(data, i);
@@ -107,11 +106,11 @@ class OBJLoader {
 			positions: data.positions,
 			normals: data.normals,
 			textureCoords: data.textureCoords,
-			indices
+			indices,
 		};
 	}
 
-	private getVertex(data: RawData, index: number) {
+	getVertex(data, index) {
 		return [
 			data.positions[index * 3],
 			data.positions[index * 3 + 1],
@@ -124,7 +123,7 @@ class OBJLoader {
 		];
 	}
 
-	private isVertexProcessed(data: RawData, index: number) {
+	isVertexProcessed(data, index) {
 		const v1 = this.getVertex(data, index);
 		for (let i = 0; i < index; i++) {
 			const v2 = this.getVertex(data, i);
@@ -141,7 +140,7 @@ class OBJLoader {
 		};
 	}
 
-	private areVerticesIdentical(v1: number[], v2: number[]) {
+	areVerticesIdentical(v1, v2) {
 		for (let i = 0; i < v1.length; i++) {
 			if (v1[i] != v2[i]) {
 				return false;
@@ -150,44 +149,39 @@ class OBJLoader {
 		return true;
 	}
 
-	public createModel(
-		positions: number[],
-		normals: number[],
-		indices: number[],
-		textureCoords: number[]
-	) {
+	createModel(positions, normals, indices, textureCoords) {
 		this.checkIndices(indices);
-		const posBuff = this._gl.createBuffer();
-		const normBuff = this._gl.createBuffer();
-		const uvBuff = this._gl.createBuffer();
-		const indexBuff = this._gl.createBuffer();
+		const posBuff = this.gl.createBuffer();
+		const normBuff = this.gl.createBuffer();
+		const uvBuff = this.gl.createBuffer();
+		const indexBuff = this.gl.createBuffer();
 
-		this._gl.bindBuffer(this._gl.ARRAY_BUFFER, posBuff);
-		this._gl.bufferData(
-			this._gl.ARRAY_BUFFER,
+		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, posBuff);
+		this.gl.bufferData(
+			this.gl.ARRAY_BUFFER,
 			new Float32Array(positions),
-			this._gl.STATIC_DRAW
+			this.gl.STATIC_DRAW
 		);
 
-		this._gl.bindBuffer(this._gl.ARRAY_BUFFER, normBuff);
-		this._gl.bufferData(
-			this._gl.ARRAY_BUFFER,
+		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, normBuff);
+		this.gl.bufferData(
+			this.gl.ARRAY_BUFFER,
 			new Float32Array(normals),
-			this._gl.STATIC_DRAW
+			this.gl.STATIC_DRAW
 		);
 
-		this._gl.bindBuffer(this._gl.ARRAY_BUFFER, uvBuff);
-		this._gl.bufferData(
-			this._gl.ARRAY_BUFFER,
+		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, uvBuff);
+		this.gl.bufferData(
+			this.gl.ARRAY_BUFFER,
 			new Float32Array(textureCoords),
-			this._gl.STATIC_DRAW
+			this.gl.STATIC_DRAW
 		);
 
-		this._gl.bindBuffer(this._gl.ELEMENT_ARRAY_BUFFER, indexBuff);
-		this._gl.bufferData(
-			this._gl.ELEMENT_ARRAY_BUFFER,
+		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indexBuff);
+		this.gl.bufferData(
+			this.gl.ELEMENT_ARRAY_BUFFER,
 			new Uint16Array(indices),
-			this._gl.STATIC_DRAW
+			this.gl.STATIC_DRAW
 		);
 
 		const numPositions = indices.length;
@@ -203,7 +197,7 @@ class OBJLoader {
 		};
 	}
 
-	private checkIndices(indices: number[]) {
+	checkIndices(indices) {
 		const max = Math.pow(2, 16);
 		for (const i of indices) {
 			if (i >= max) {

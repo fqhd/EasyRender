@@ -1,7 +1,7 @@
-import Shader from "./Shader";
+import Shader from "./Shader.js";
 
 class ShadowMapShader extends Shader {
-	constructor(_gl: WebGLRenderingContext) {
+	constructor(gl) {
 		const vSource = `
 			attribute vec3 aPosition;
 
@@ -14,7 +14,7 @@ class ShadowMapShader extends Shader {
 		const fSource = `
 			void main(){
 		}`;
-		super(_gl, vSource, fSource);
+		super(gl, vSource, fSource);
 	}
 }
 

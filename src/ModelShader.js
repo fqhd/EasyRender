@@ -1,7 +1,7 @@
 import Shader from "./Shader.js";
 
 class ModelShader extends Shader {
-	constructor(_gl: WebGLRenderingContext) {
+	constructor(gl) {
 		const vSource = `
 			attribute vec3 aPosition;
 			attribute vec3 aNormal;
@@ -39,13 +39,11 @@ class ModelShader extends Shader {
 
 			uniform mediump vec3 objColor;
 			uniform sampler2D uTexture;
-			uniform sampler2D shadowMap;
 
 			const mediump float shininess = 2.0;
 			const mediump float reflectivity = 0.3;
 
 			void main(){
-				mediump vec3 fragColor;
 				mediump vec3 fragColor = texture2D(uTexture, vUV).rgb;
 
 				mediump vec3 unitLightDir = normalize(vLightDir);
@@ -66,10 +64,10 @@ class ModelShader extends Shader {
 
 				gl_FragColor = vec4(fragColor * brightness + finalSpec, 1.0);
 			}`;
-		super(_gl, vSource, fSource);
-		this.bind();
-		this.setInt("uTexture", 0);
-		this.setInt("shadowMap", 1);
+		super(gl, vSource, fSource);
+		super.bind();
+		super.setInt("uTexture", 0);
+		super.setInt("shadowMap", 1);
 	}
 }
 

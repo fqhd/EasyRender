@@ -1,8 +1,6 @@
-import { vec3, mat4 } from "gl-matrix";
-import { Vector } from "./types";
-
+const { vec3, mat4 } = glMatrix;
 class ERMath {
-	public static calcForward(pitch: number, yaw: number) {
+	static calcForward(pitch, yaw) {
 		return vec3.fromValues(
 			Math.sin(ERMath.toRadians(yaw)) * Math.cos(ERMath.toRadians(pitch)),
 			Math.sin(ERMath.toRadians(pitch)),
@@ -10,11 +8,11 @@ class ERMath {
 		);
 	}
 
-	public static toRadians(r: number) {
+	static toRadians(r) {
 		return (r * Math.PI) / 180;
 	}
 
-	public static createModelMatrix(position: Vector, rotation: Vector, scale: Vector) {
+	static createModelMatrix(position, rotation, scale) {
 		const matrix = mat4.create();
 		mat4.fromTranslation(matrix, [position.x, position.y, position.z]);
 		mat4.rotate(
@@ -39,17 +37,17 @@ class ERMath {
 		return matrix;
 	}
 
-	public static isPowerOf2(value: number) {
+	static isPowerOf2(value) {
 		return (value & (value - 1)) == 0;
 	}
 
-	public static calcProj(w: number, h: number, fov: number) {
+	static calcProj(w, h, fov) {
 		const proj = mat4.create();
 		mat4.perspective(proj, ERMath.toRadians(fov), w / h, 0.1, 1000.0);
 		return proj;
 	}
 
-	public static calcView(yaw: number, pitch: number, position: Vector) {
+	static calcView(yaw, pitch, position) {
 		const view = mat4.create();
 		const camPosVec = vec3.fromValues(position.x, position.y, position.z);
 		const camForwardVec = ERMath.calcForward(pitch, yaw);
