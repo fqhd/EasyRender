@@ -1,7 +1,7 @@
 import TextureManager from "./TextureManager.js";
 
 class AssetManager {
-	constructor(gl){
+	constructor(gl) {
 		// Initialize default albedo, normal, and specular textures
 		this.gl = gl;
 		this.textureManager = new TextureManager(gl);
@@ -11,26 +11,32 @@ class AssetManager {
 	}
 
 	async getTexture(albedoURL, normalURL, specularURL) {
-			let albedo = await this.textureManager.loadWebGLTexture(albedoURL);
-			if(!albedo){
-				albedo = this.albedo;
-			}
+		let albedo;
+		if (albedoURL) {
+			albedo = await this.textureManager.loadWebGLTexture(albedoURL);
+		} else {
+			albedo = this.albedo;
+		}
 
-			let normal = await this.textureManager.loadWebGLTexture(normalURL);
-			if(!normal){
-				normal = this.normal;
-			}
+		let normal;
+		if (normalURL) {
+			normal = await this.textureManager.loadWebGLTexture(normalURL);
+		} else {
+			normal = this.normal;
+		}
 
-			let specular = await this.textureManager.loadWebGLTexture(specularURL);
-			if(!specular){
-				specular = this.specular;
-			}
+		let specular;
+		if (specularURL) {
+			specular = await this.textureManager.loadWebGLTexture(specularURL);
+		} else {
+			specular = this.specular;
+		}
 
-			return {
-				albedo,
-				normal,
-				specular
-			};
+		return {
+			albedo,
+			normal,
+			specular,
+		};
 	}
 }
 

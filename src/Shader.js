@@ -39,7 +39,7 @@ class Shader {
 		if(this.attribLocations[name]){
 			return this.attribLocations[name];
 		}
-		return this.attribLocations[name] = this.gl.getAttribLocation(program, name);
+		return this.attribLocations[name] = this.gl.getAttribLocation(this.program, name);
 	}
 
 	setMat4(name, value){

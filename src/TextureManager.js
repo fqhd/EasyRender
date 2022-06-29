@@ -8,7 +8,7 @@ class TextureManager {
 	loadWebGLTexture(url) {
 		return new Promise((resolve, reject) => {
 			const image = new Image();
-			image.src = url.toString();
+			image.src = url;
 			image.onload = () => {
 				const texture = this.gl.createTexture();
 				this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
@@ -21,7 +21,7 @@ class TextureManager {
 					image
 				);
 				if (ERMath.isPowerOf2(image.width) && ERMath.isPowerOf2(image.height)) {
-					// this.gl.generateMipmap(this.gl.TEXTURE_2D);
+					this.gl.generateMipmap(this.gl.TEXTURE_2D);
 				} else {
 					this.gl.texParameteri(
 						this.gl.TEXTURE_2D,
@@ -39,12 +39,7 @@ class TextureManager {
 						this.gl.LINEAR
 					);
 				}
-				if(texture){
-					resolve(texture);
-				}
-			};
-			image.onabort = function () {
-				reject("ERLoadTexture: failed to load texture: " + url);
+				resolve(texture);
 			};
 		});
 	}

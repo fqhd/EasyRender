@@ -1,16 +1,6 @@
 class OBJLoader {
 	constructor(gl) {
-		this.cache = new Map();
 		this.gl = gl;
-	}
-
-	async getModel(url) {
-		const query = this.cache.get(url.toString());
-		if (!query) {
-			const model = await this.loadModel(url);
-			this.cache.set(url.toString(), model);
-			return model;
-		}
 	}
 
 	async loadModel(url) {

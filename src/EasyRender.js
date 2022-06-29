@@ -67,7 +67,7 @@ class EasyRender {
 		for (const object of this.objects) {
 			const { position, rotation, scale } = object;
 			const modelMatrix = ERMath.createModelMatrix(position, rotation, scale);
-			this.renderer.modelShader.setMat4("model", modelMatrix);
+			this.renderer.shadowShader.setMat4("model", modelMatrix);
 			this.renderer.drawModelShadow(object.model);
 		}
 		this.shadowMap.unbind();

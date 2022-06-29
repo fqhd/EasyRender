@@ -62,7 +62,7 @@ class ModelShader extends Shader {
 				specFactor = pow(specFactor, shininess);
 				mediump vec3 finalSpec = vec3(1.0) * reflectivity * specFactor;
 
-				gl_FragColor = vec4(fragColor * brightness + finalSpec, 1.0);
+				gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
 			}`;
 		super(gl, vSource, fSource);
 		super.bind();
