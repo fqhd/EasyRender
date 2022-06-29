@@ -11,17 +11,17 @@ class AssetManager {
 	}
 
 	async getTexture(albedoURL, normalURL, specularURL) {
-			let albedo = await this.textureManager.getTexture(albedoURL);
+			let albedo = await this.textureManager.loadWebGLTexture(albedoURL);
 			if(!albedo){
 				albedo = this.albedo;
 			}
 
-			let normal = await this.textureManager.getTexture(normalURL);
+			let normal = await this.textureManager.loadWebGLTexture(normalURL);
 			if(!normal){
 				normal = this.normal;
 			}
 
-			let specular = await this.textureManager.getTexture(specularURL);
+			let specular = await this.textureManager.loadWebGLTexture(specularURL);
 			if(!specular){
 				specular = this.specular;
 			}
