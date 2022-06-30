@@ -3,6 +3,25 @@ import ERMath from "./ERMath.js";
 class TextureManager {
 	constructor(gl) {
 		this.gl = gl;
+		this.cache = new Map();
+		this.defaultTextures = {
+			albedo: this.createTexture([255, 255, 255]),
+			normal: this.createTexture([0, 255, 0]),
+			specular: this.createTexture([255, 0, 0])
+		};
+	}
+
+	async loadTexture(path, type){
+		const url = path + "/" + type + ".jpg";
+		let texture = this.cache.get(url);
+		if(!texture){
+			texture = await this.loadWebGLTexture(url);
+			this.cache.set(url, texture);
+		}
+		if(!texture){
+			return this.defaultTextures[type];
+		}
+		return texture;
 	}
 
 	loadWebGLTexture(url) {
