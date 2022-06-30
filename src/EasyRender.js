@@ -2,7 +2,7 @@ import ModelRenderer from "./ModelRenderer.js";
 import OBJLoader from "./OBJLoader.js";
 import Framebuffer from "./Framebuffer.js";
 import Camera from "./Camera.js";
-import AssetManager from "./AssetManager.js";
+import TextureManager from "./TextureManager.js";
 import ERMath from "./ERMath.js";
 
 class EasyRender {
@@ -12,7 +12,7 @@ class EasyRender {
 		this.renderer = new ModelRenderer(this.gl);
 		// this.shadowMap = new Framebuffer(this.gl, 2048);
 		this.objloader = new OBJLoader(this.gl);
-		// this.assetmanager = new AssetManager(this.gl);
+		this.textureManager = new TextureManager(this.gl);
 		this.camera = new Camera(canvas.clientWidth, canvas.clientHeight, 70);
 		this.objects = [];
 	}
@@ -37,6 +37,15 @@ class EasyRender {
 
 	add(obj) {
 		this.objects.push(obj);
+	}
+
+	async loadObject(path) {
+		// Load everything
+		const albedo = await this.textureManager.loadTexture(path, "albedo");
+		const model = await this.objloader.loadModel(path);
+		return this.createObject(model, {
+			albedo,
+		});
 	}
 
 	createObject(model, texture) {
