@@ -24,7 +24,7 @@ const renderer = new EasyRender("ERCanvas");
 
 // Asynchronous function to load & setup your scene
 async function init(){
-	const object = renderer.loadObject("./res/car");
+	const object = await renderer.loadObject("./res/car");
 	renderer.add(object);
 	renderer.camera.position.z = -10;
 	renderer.camera.position.y = 10;
