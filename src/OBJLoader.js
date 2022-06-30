@@ -1,9 +1,20 @@
 class OBJLoader {
 	constructor(gl) {
 		this.gl = gl;
+		this.cache = new Map();
 	}
 
-	async loadModel(url) {
+	async loadModel(path){
+		const url = path + "/" + "model.obj";
+		let model = this.cache.get(url);
+		if(!model){
+			model = await this.loadWebGLModel(url);
+			this.cache.set(url, model);
+		}
+		return model;
+	}
+
+	async loadWebGLModel(url) {
 		const data = await this.loadModelData(url);
 		const optimizedData = this.optimizeModel(data);
 		const { positions, normals, textureCoords, indices } = optimizedData;
