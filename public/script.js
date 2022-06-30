@@ -7,8 +7,11 @@ async function init(){
 	const model = await renderer.objloader.loadModel("./res/cube.obj");
 	const object = renderer.createObject(model);
 	renderer.add(object);
+	renderer.camera.position.z = -10;
+	renderer.camera.position.y = 10;
+	renderer.camera.pitch = -30;
 }
-	
+
 function animate() {
 	renderer.drawScene();
 	requestAnimationFrame(animate);
