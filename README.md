@@ -1,6 +1,6 @@
 # EasyRender
 
-Sometimes you just want to visualize 3D objects on the web, but it can be difficult to learn graphics APIs such as webgl or three.js, I created EasyRender to fix this issue. It is a really simple library that allows you to render 3D models relatively easily. This project is aimted to cater around people who are making some 3D visualization of some sort, whether it is to load a model, work with AI, or else. Although you can make a game with this, it is not recommended as a lot of the initial graphic properties are already built in and cannot be changed without changing the source code of the project.
+Sometimes you just want to visualize 3D objects on the web, but it can be difficult to learn graphics APIs such as webgl or three.js, I created EasyRender to fix this issue. It is a really simple library that allows you to render 3D models relatively easily. This project is aimted to cater around people who are making some 3D visualization of some sort, whether it is to load a model, work with AI, or else. Although you can make a game with this, it is not recommended as a lot of the initial graphic properties are already built in and cannot be changed without altering the source code of the project.
 
 ---
 
@@ -10,55 +10,35 @@ The library operates with functions. There are no classes, most of the developme
 
 ### Setup
 
-Import the `easy_renderer.js` using a `<script>` tag file before your main javascript file. Now that you have the library imported, you have to create a canvas element, give it a width and height, and an id of "ERCanvas".
-
-```html
-<canvas id="ERCanvas" width="800" height="600"></canvas>
-```
+The easiest way to start using this library is by cloning the repository and creating a `script.js` file inside the `public/` directory. You will be writing your code in the `script.js` file.
 
 ### Getting Started
 
 Here is a small example to get you started using the library.
 
 ```js
-// Initialize the library
-ERInit();
+import EasyRender from "../src/EasyRender.js";
 
-// Define the positions, normals, and textureCoords of your model (These will generally be loaded from a file with ERLoadModel())
-const positions = [-1, -1, 0, 0, 1, 0, 1, -1, 0];
-const normals = [0, 0, 1, 0, 0, 1, 0, 0, 1];
-const indices = [1, 0, 2];
+// Initialize the renderer by passing in the ID of the HTML canvas element.
+const renderer = new EasyRender("ERCanvas");
 
-// Create an ERModel
-const model = ERCreateModel(positions, normals, indices);
-
-// Create an ERObject
-const obj = ERCreateObject(model, null, [0, 255, 0]); // no texture and a green color
-
-// Move the object infront of the camera so you can seen it
-obj.position.z = 10;
-
-// Add objects to list of objects to draw
-ERAddObject(obj);
-
-// Start the animation and send your callback function
-ERBeginAnimationLoop(update);
-
-function update(deltaTime) {
-	// This function will be called every frame
+// Asynchronous function to load & setup your scene
+async function init(){
+	const object = await renderer.loadObject("./res/car");
+	renderer.add(object);
+	renderer.camera.position.z = -10;
+	renderer.camera.position.y = 10;
+	renderer.camera.pitch = -30;
 }
+
+// Simple animation loop
+function animate() {
+	renderer.drawScene();
+	requestAnimationFrame(animate);
+}
+
+// After initializing the scene, begin rendering
+init().then(() => {
+	requestAnimationFrame(animate);
+});
 ```
-
-### Documentation
-
-`ERAddObject(object): void` Adds an object to the scene(don't call this every frame)
-
-`ERSetCamPos(x, z): void` Sets camera position
-
-`ERLoadModel(url): Promise` Loads a model from a url(must be in .obj format). Returns a promise that resolves to an object containing raw mesh data.
-
-`ERCreateModel(positions, normals, indices, textureCoords?, tangents?): Model` Creates a model based on the parameters provided.
-
-`ERLoadTexture(url): Promise` Loads a texture from a url(must be .png). Returns a promise that resolves into texture object
-
-`ERBeginAnimationLoop(callback): void` Asynchronously starts the rendering loop and calls the callback you passed in every frame and passes in the deltaTime(in seconds) as a parameter to the callback.
