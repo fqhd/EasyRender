@@ -29,6 +29,7 @@ class Shader {
 	}
 
 	getUniformLocation(name){
+		return this.gl.getUniformLocation(this.program, name);
 		if(this.uniformLocations[name]){
 			return this.uniformLocations[name];
 		}

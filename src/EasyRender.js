@@ -10,9 +10,9 @@ class EasyRender {
 		const canvas = document.getElementById(id);
 		this.initWebGL(canvas);
 		this.renderer = new ModelRenderer(this.gl);
-		this.shadowMap = new Framebuffer(this.gl, 2048);
+		// this.shadowMap = new Framebuffer(this.gl, 2048);
 		this.objloader = new OBJLoader(this.gl);
-		this.assetmanager = new AssetManager(this.gl);
+		// this.assetmanager = new AssetManager(this.gl);
 		this.camera = new Camera(canvas.clientWidth, canvas.clientHeight, 70);
 		this.objects = [];
 	}
@@ -25,7 +25,7 @@ class EasyRender {
 		gl.clearColor(0.7, 0.81, 1, 1);
 		gl.enable(gl.DEPTH_TEST);
 		gl.depthFunc(gl.LEQUAL);
-		gl.enable(gl.CULL_FACE);
+		// gl.enable(gl.CULL_FACE);
 		if (!gl.getExtension("WEBGL_depth_texture")) {
 			alert(
 				"Your browser doesn't support the WEBGL_depth_texture extension. This application may not work"
@@ -76,20 +76,32 @@ class EasyRender {
 	drawObjects() {
 		this.renderer.modelShader.bind();
 		this.renderer.modelShader.setMat4("view", this.camera.getView());
-		this.renderer.modelShader.setMat4("proj", this.camera.getProj());
+		this.renderer.modelShader.setMat4("projection", this.camera.getProj());
 
 		for (const object of this.objects) {
 			const { position, rotation, scale } = object;
 			const modelMatrix = ERMath.createModelMatrix(position, rotation, scale);
 			this.renderer.modelShader.setMat4("model", modelMatrix);
-			this.renderer.bindTexture(object.texture);
+			// this.renderer.bindTexture(object.texture);
 			this.renderer.drawModel(object.model);
 		}
 	}
 
 	drawScene() {
-		this.drawToShadowMap();
+		this.clear();
+		// this.drawToShadowMap();
 		this.drawObjects();
+	}
+
+	clear() {
+		this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+		this.gl.viewport(
+			0,
+			0,
+			this.gl.canvas.clientWidth,
+			this.gl.canvas.clientHeight
+		);
+		this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
 	}
 
 	drawToShadowMap() {

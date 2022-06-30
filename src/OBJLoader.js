@@ -3,7 +3,34 @@ class OBJLoader {
 		this.gl = gl;
 	}
 
+	model(){
+		const pos = [
+			0, 0, 0,
+			1, 1, 0,
+			1, 0, 0
+		];
+		const posBuff = this.gl.createBuffer();
+		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, posBuff);
+		this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(pos), this.gl.STATIC_DRAW);
+
+		const indices = [
+			0, 1, 2
+		];
+		const indexBuff = this.gl.createBuffer();
+		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indexBuff);
+		this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), this.gl.STATIC_DRAW);
+
+		return {
+			buffers: {
+				posBuff,
+				indexBuff,
+			},
+			numPositions: 3
+		}
+	}
+
 	async loadModel(url) {
+		return this.model();
 		const data = await this.loadModelData(url);
 		const optimizedData = this.optimizeModel(data);
 		const { positions, normals, textureCoords, indices } = optimizedData;

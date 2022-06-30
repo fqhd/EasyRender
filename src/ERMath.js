@@ -2,9 +2,9 @@ const { vec3, mat4 } = glMatrix;
 class ERMath {
 	static calcForward(pitch, yaw) {
 		return vec3.fromValues(
-			Math.sin(ERMath.toRadians(yaw)) * Math.cos(ERMath.toRadians(pitch)),
+			Math.cos(ERMath.toRadians(yaw)) * Math.cos(ERMath.toRadians(pitch)),
 			Math.sin(ERMath.toRadians(pitch)),
-			Math.cos(ERMath.toRadians(yaw)) * Math.cos(ERMath.toRadians(pitch))
+			Math.sin(ERMath.toRadians(yaw)) * Math.cos(ERMath.toRadians(pitch))
 		);
 	}
 
@@ -43,14 +43,15 @@ class ERMath {
 
 	static calcProj(w, h, fov) {
 		const proj = mat4.create();
-		mat4.perspective(proj, ERMath.toRadians(fov), w / h, 0.1, 1000.0);
+		mat4.perspective(proj, ERMath.toRadians(fov), w / h, 0.1, 1000);
 		return proj;
 	}
 
 	static calcView(yaw, pitch, position) {
 		const view = mat4.create();
-		const camPosVec = vec3.fromValues(position.x, position.y, position.z);
-		const camForwardVec = ERMath.calcForward(pitch, yaw);
+		const camPosVec = vec3.fromValues(0, 0, -10);
+		// const camForwardVec = ERMath.calcForward(pitch, yaw);
+		const camForwardVec = vec3.fromValues(0, 0, 1);
 		mat4.lookAt(
 			view,
 			camPosVec,

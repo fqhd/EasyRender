@@ -5,7 +5,7 @@ class ModelRenderer {
 	constructor(gl) {
 		this.gl = gl;
 		this.modelShader = new ModelShader(gl);
-		this.shadowShader = new ShadowShader(gl);
+		// this.shadowShader = new ShadowShader(gl);
 	}
 
 	bindTexture(texture){
@@ -33,27 +33,27 @@ class ModelRenderer {
 			this.modelShader.getAttribLocation("aPosition")
 		);
 
-		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, model.buffers.normBuff);
-		this.gl.vertexAttribPointer(
-			this.modelShader.getAttribLocation("aNormal"),
-			3,
-			this.gl.FLOAT,
-			false,
-			0,
-			0
-		);
-		this.gl.enableVertexAttribArray(this.modelShader.getAttribLocation("aNormal"));
+		// this.gl.bindBuffer(this.gl.ARRAY_BUFFER, model.buffers.normBuff);
+		// this.gl.vertexAttribPointer(
+		// 	this.modelShader.getAttribLocation("aNormal"),
+		// 	3,
+		// 	this.gl.FLOAT,
+		// 	false,
+		// 	0,
+		// 	0
+		// );
+		// this.gl.enableVertexAttribArray(this.modelShader.getAttribLocation("aNormal"));
 
-		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, model.buffers.uvBuff);
-		this.gl.vertexAttribPointer(
-			this.modelShader.getAttribLocation("aUV"),
-			2,
-			this.gl.FLOAT,
-			false,
-			0,
-			0
-		);
-		this.gl.enableVertexAttribArray(this.modelShader.getAttribLocation("aUV"));
+		// this.gl.bindBuffer(this.gl.ARRAY_BUFFER, model.buffers.uvBuff);
+		// this.gl.vertexAttribPointer(
+		// 	this.modelShader.getAttribLocation("aUV"),
+		// 	2,
+		// 	this.gl.FLOAT,
+		// 	false,
+		// 	0,
+		// 	0
+		// );
+		// this.gl.enableVertexAttribArray(this.modelShader.getAttribLocation("aUV"));
 
 		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, model.buffers.indexBuff);
 
@@ -80,7 +80,6 @@ class ModelRenderer {
 		);
 
 		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, model.buffers.indexBuff);
-
 		this.gl.drawElements(
 			this.gl.TRIANGLES,
 			model.numPositions,
