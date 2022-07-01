@@ -3,9 +3,8 @@ import EasyRender from "../src/EasyRender.js";
 const renderer = new EasyRender("ERCanvas");
 
 async function init(){
-	// const texture = await renderer.assetmanager.getTexture("./res/brick_texture.jpg");
-	const model = await renderer.objloader.loadModel("./res/cube.obj");
-	const object = renderer.createObject(model);
+	const object = await renderer.loadObject("./res/cube");
+	await renderer.loadShaders(renderer.gl);
 	renderer.add(object);
 	renderer.camera.position.z = -10;
 	renderer.camera.position.y = 10;

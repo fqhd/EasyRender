@@ -1,21 +1,17 @@
 import Shader from "./Shader.js";
 
 class ShadowMapShader extends Shader {
-	constructor(gl) {
-		const vSource = `
-			attribute vec3 aPosition;
-
-			uniform mat4 lightSpaceMatrix;
-			uniform mat4 model;
-
-			void main(){
-				gl_Position = lightSpaceMatrix * model * vec4(aPosition, 1.0);
-			}`;
-		const fSource = `
-			void main(){
-		}`;
+	constructor(gl, vSource, fSource) {
 		super(gl, vSource, fSource);
 	}
 }
 
-export default ShadowMapShader;
+export default async function loadShadowMapShader(gl){
+	const vResponse = await fetch("../src/shaders/vShadowMap.glsl");
+	const vSource = await vResponse.text();
+
+	const fResponse = await fetch("../src/shaders/fShadowMap.glsl");
+	const fSource = await fResponse.text();
+
+	return new ShadowMapShader(gl, vSource, fSource);
+}

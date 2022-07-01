@@ -39,6 +39,10 @@ class EasyRender {
 		this.objects.push(obj);
 	}
 
+	async loadShaders(gl){
+		await this.renderer.loadShaders(gl);
+	}
+
 	async loadObject(path) {
 		// Load everything
 		const albedo = await this.textureManager.loadTexture(path, "albedo");
