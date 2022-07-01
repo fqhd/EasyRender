@@ -4,13 +4,14 @@ import Framebuffer from "./Framebuffer.js";
 import Camera from "./Camera.js";
 import TextureManager from "./TextureManager.js";
 import ERMath from "./ERMath.js";
+import ShadowMap from "./ShadowMap.js";
 
 class EasyRender {
 	constructor(id) {
 		const canvas = document.getElementById(id);
 		this.initWebGL(canvas);
 		this.renderer = new ModelRenderer(this.gl);
-		// this.shadowMap = new Framebuffer(this.gl, 2048);
+		this.shadowMap = new ShadowMap(this.gl);
 		this.objloader = new OBJLoader(this.gl);
 		this.textureManager = new TextureManager(this.gl);
 		this.camera = new Camera(canvas.clientWidth, canvas.clientHeight, 70);
@@ -75,7 +76,6 @@ class EasyRender {
 	}
 
 	drawShadows() {
-		this.shadowMap.bind();
 		this.renderer.shadowShader.bind();
 		for (const object of this.objects) {
 			const { position, rotation, scale } = object;
@@ -83,7 +83,6 @@ class EasyRender {
 			this.renderer.shadowShader.setMat4("model", modelMatrix);
 			this.renderer.drawModelShadow(object.model);
 		}
-		this.shadowMap.unbind();
 	}
 
 	drawObjects() {
@@ -95,26 +94,14 @@ class EasyRender {
 			const { position, rotation, scale } = object;
 			const modelMatrix = ERMath.createModelMatrix(position, rotation, scale);
 			this.renderer.modelShader.setMat4("model", modelMatrix);
-			// this.renderer.bindTexture(object.texture);
+			this.renderer.bindTexture(object.texture);
 			this.renderer.drawModel(object.model);
 		}
 	}
 
 	drawScene() {
-		this.clear();
-		// this.drawToShadowMap();
+		this.drawToShadowMap();
 		this.drawObjects();
-	}
-
-	clear() {
-		this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
-		this.gl.viewport(
-			0,
-			0,
-			this.gl.canvas.clientWidth,
-			this.gl.canvas.clientHeight
-		);
-		this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
 	}
 
 	drawToShadowMap() {

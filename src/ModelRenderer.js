@@ -4,8 +4,6 @@ import loadShadowShader from "./ShadowMapShader.js";
 class ModelRenderer {
 	constructor(gl) {
 		this.gl = gl;
-		// this.modelShader = new ModelShader(gl);
-		// this.shadowShader = new ShadowShader(gl);
 	}
 
 	async loadShaders(gl){
