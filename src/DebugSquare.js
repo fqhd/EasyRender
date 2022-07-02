@@ -20,6 +20,7 @@ class DebugSquare {
 
 	draw(texture) {
 		this.shader.bind();
+		this.gl.activeTexture(this.gl.TEXTURE0);
 		this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
 		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.posBuff);
 		this.gl.vertexAttribPointer(

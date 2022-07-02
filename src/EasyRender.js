@@ -102,7 +102,7 @@ class EasyRender {
 	drawScene() {
 		this.drawToShadowMap();
 		this.drawObjects();
-		this.debugSquare.draw(this.objects[0].texture.albedo);
+		this.debugSquare.draw(this.shadowMap.shadowMaps[0].textureID);
 	}
 
 	drawToShadowMap() {
