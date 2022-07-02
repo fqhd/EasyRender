@@ -4,6 +4,7 @@ import Camera from "./Camera.js";
 import TextureManager from "./TextureManager.js";
 import ERMath from "./ERMath.js";
 import ShadowMap from "./ShadowMap.js";
+import DebugSquare from "./DebugSquare.js";
 
 class EasyRender {
 	constructor(id) {
@@ -15,6 +16,7 @@ class EasyRender {
 		this.textureManager = new TextureManager(this.gl);
 		this.camera = new Camera(canvas.clientWidth, canvas.clientHeight, 70);
 		this.objects = [];
+		this.debugSquare = new DebugSquare(this.gl);
 	}
 
 	initWebGL(canvas) {
@@ -41,6 +43,7 @@ class EasyRender {
 
 	async loadShaders(gl){
 		await this.renderer.loadShaders(gl);
+		await this.debugSquare.loadShaders(gl);
 	}
 
 	async loadObject(path) {
@@ -99,6 +102,7 @@ class EasyRender {
 	drawScene() {
 		this.drawToShadowMap();
 		this.drawObjects();
+		this.debugSquare.draw(this.objects[0].texture.albedo);
 	}
 
 	drawToShadowMap() {
