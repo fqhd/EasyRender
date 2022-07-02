@@ -1,6 +1,5 @@
 import ModelRenderer from "./ModelRenderer.js";
 import OBJLoader from "./OBJLoader.js";
-import Framebuffer from "./Framebuffer.js";
 import Camera from "./Camera.js";
 import TextureManager from "./TextureManager.js";
 import ERMath from "./ERMath.js";
@@ -77,10 +76,8 @@ class EasyRender {
 
 	drawShadows() {
 		this.renderer.shadowShader.bind();
+		this.renderer.shadowShader.setMat4("gWVP", ERMath.calcLightSpaceMatrix(this.camera.yaw, this.camera.pitch, this.camera.position));
 		for (const object of this.objects) {
-			const { position, rotation, scale } = object;
-			const modelMatrix = ERMath.createModelMatrix(position, rotation, scale);
-			this.renderer.shadowShader.setMat4("model", modelMatrix);
 			this.renderer.drawModelShadow(object.model);
 		}
 	}

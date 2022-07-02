@@ -1,4 +1,5 @@
 import EasyRender from "../src/EasyRender.js";
+import ERMath from "../src/ERMath.js";
 
 const renderer = new EasyRender("ERCanvas");
 
